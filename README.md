@@ -34,6 +34,13 @@ npm install
    → Modalità sviluppatore → *Carica estensione non pacchettizzata* → `apps/extension/.output/chrome-mv3`.
    Apri le Opzioni dell'estensione, inserisci URL della web app e token, "Salva e verifica".
 
+## Produzione (Vercel)
+
+Progetto Vercel `rdl-self-publishing` collegato al repo GitHub (root directory `apps/web`): ogni push su `main` ridistribuisce.
+URL: https://rdl-self-publishing-rdl1980s-projects.vercel.app — le variabili `NEXT_PUBLIC_SUPABASE_URL` e
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` sono impostate; `SUPABASE_SECRET_KEY` va aggiunta a mano in Vercel → Settings →
+Environment Variables (poi redeploy). Nelle Opzioni dell'estensione usa questo URL al posto di localhost.
+
 ## Come si usa
 
 | Funzione | Dove | Cosa fa |

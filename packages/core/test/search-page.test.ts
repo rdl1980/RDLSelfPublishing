@@ -42,6 +42,10 @@ describe('parseSearchPage (locale IT)', () => {
     expect(page.items.filter((i) => i.isSponsored).every((i) => i.organicPosition === null)).toBe(true);
   });
 
+  it('rimuove il prefisso "Annuncio sponsorizzato" dai titoli', () => {
+    expect(page.items.every((i) => !/^annuncio sponsorizzato/i.test(i.title ?? ''))).toBe(true);
+  });
+
   it('ha prezzo e titolo sulla grande maggioranza delle card', () => {
     const withPrice = page.items.filter((i) => i.priceCents !== null).length;
     const withTitle = page.items.filter((i) => i.title).length;

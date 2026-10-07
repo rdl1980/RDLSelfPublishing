@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseLocaleDate, daysSince } from '../src/locale/it-date';
-import { parseLocaleInt, parseLocaleNumber, parsePriceCents, parseRating } from '../src/locale/it-number';
+import { formatEuroCents, formatIt, parseLocaleInt, parseLocaleNumber, parsePriceCents, parseRating } from '../src/locale/it-number';
 import { detailKeyFor, detectFormat } from '../src/locale/labels';
 
 describe('parseLocaleNumber', () => {
@@ -63,6 +63,16 @@ describe('parseLocaleDate', () => {
   it('daysSince', () => {
     expect(daysSince('2026-10-01', new Date('2026-10-07T12:00:00Z'))).toBe(6);
     expect(daysSince(null)).toBeNull();
+  });
+});
+
+describe('formatIt / formatEuroCents', () => {
+  it('separatori italiani deterministici', () => {
+    expect(formatIt(2252)).toBe('2.252');
+    expect(formatIt(1234567.891, 1)).toBe('1.234.567,9');
+    expect(formatIt(7.99, 2)).toBe('7,99');
+    expect(formatIt(0.4, 1)).toBe('0,4');
+    expect(formatEuroCents(234915)).toBe('2.349,15 €');
   });
 });
 

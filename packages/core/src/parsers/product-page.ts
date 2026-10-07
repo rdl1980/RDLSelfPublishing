@@ -11,6 +11,7 @@ import type { CategoryRank, FormatOffer, ParsedProduct, Product, ProductSnapshot
 import { categoryIdFromHref, parseBsrText, type BsrInfo } from './bsr';
 import { isBotChallenge } from './captcha';
 import { attr, detectLocale, q, qa, qFirst, text } from './dom';
+import { firstPositivePrice } from './search-page';
 
 interface DetailEntry {
   key: DetailKey;
@@ -32,7 +33,11 @@ function readDetails(doc: Document): DetailEntry[] {
     out.push({ key, value, element: li });
   }
 
-  for (const tr of qa(doc, '#productDetails_detailBullets_sections1 tr, #productDetails_techSpec_section_1 tr, #productDetailsTable tr')) {
+  // Layout a tabella (libri con molte specifiche, cancelleria, articoli non librari)
+  const seenRows = new Set<Element>();
+  for (const tr of qa(doc, '#productDetails_detailBullets_sections1 tr, #productDetails_techSpec_section_1 tr, #productDetailsTable tr, #prodDetails tr, #productDetails_feature_div tr, table.prodDetTable tr')) {
+    if (seenRows.has(tr)) continue;
+    seenRows.add(tr);
     const th = q(tr, 'th');
     const td = q(tr, 'td');
     if (!th || !td) continue;
@@ -92,18 +97,40 @@ function parseImage(doc: Document): string | null {
  */
 function parseBsrEntry(entry: DetailEntry | undefined): BsrInfo {
   if (!entry) return { main: null, store: null, ranks: [] };
-  const fromText = parseBsrText(entry.value);
+  const anchors = qa(entry.element, 'a[href*="/gp/bestsellers/"]');
+  if (!anchors.length) return parseBsrText(entry.value);
 
-  const nested = qa(entry.element, 'ul li');
+  // Ogni rank è "n. 123 in <a>Categoria</a>" oppure, per lo store principale,
+  // "n. 123 in Store (<a>Visualizza i Top 100 nella categoria Store</a>)": il link dello store non ha id numerico.
+  const RANK_RE = /(?:n\.\s*|#)?([\d][\d.,]*)\s+in\s+([^(\n]+)/i;
+  let main: number | null = null;
+  let store: BsrInfo['store'] = null;
   const ranks: CategoryRank[] = [];
-  for (const li of nested) {
-    const a = q(li, 'a[href*="/gp/bestsellers/"]');
-    const rank = parseLocaleInt(text(li));
-    const name = text(a);
-    if (!a || rank === null || !name) continue;
-    ranks.push({ id: categoryIdFromHref(attr(a, 'href')), name, rank });
+  const seen = new Set<string>();
+  for (const a of anchors) {
+    const href = attr(a, 'href') ?? '';
+    const id = categoryIdFromHref(href);
+    const anchorText = text(a);
+    const isMain = id === null || /top 100/i.test(anchorText);
+    const container = a.parentElement ?? entry.element;
+    const m = text(container).match(RANK_RE);
+    if (!m) continue;
+    const rank = parseLocaleInt(m[1]);
+    if (rank === null) continue;
+    if (isMain) {
+      if (main === null) {
+        main = rank;
+        store = /kindle/i.test(m[2] ?? '') ? 'kindle' : 'books';
+      }
+      continue;
+    }
+    const name = anchorText || (m[2] ?? '').trim();
+    const key = `${name}|${rank}`;
+    if (!name || seen.has(key)) continue;
+    seen.add(key);
+    ranks.push({ id, name, rank });
   }
-  return { main: fromText.main, store: fromText.store, ranks: ranks.length ? ranks : fromText.ranks };
+  return { main, store, ranks };
 }
 
 function hasAplusContent(doc: Document): boolean {
@@ -150,16 +177,17 @@ export function parseProductPage(doc: Document, hints: { asin?: string | null } 
     attr(q(doc, '#acrCustomerReviewText'), 'aria-label') ?? text(q(doc, '#acrCustomerReviewText')),
   );
 
-  const priceEl = qFirst(doc, [
+  const priceCandidates = [
     '#tmmSwatches .selected .slot-price',
     '#tmmSwatches .selected .a-color-price',
+    '#kindle-price',
     '#corePriceDisplay_desktop_feature_div .a-price .a-offscreen',
     '#corePrice_feature_div .a-price .a-offscreen',
-    '#kindle-price',
     '#price',
     '.a-price .a-offscreen',
-  ]);
-  const priceCents = selectedFormat?.priceCents ?? parsePriceCents(text(priceEl));
+  ].flatMap((sel) => qa(doc, sel));
+  const selectedPrice = selectedFormat?.priceCents && selectedFormat.priceCents > 0 ? selectedFormat.priceCents : null;
+  const priceCents = selectedPrice ?? firstPositivePrice(priceCandidates);
 
   const product: Product = {
     asin,

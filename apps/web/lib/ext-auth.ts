@@ -31,7 +31,8 @@ export async function authenticateExtension(req: Request): Promise<ExtUser | nul
   const now = Date.now();
   if ((lastTouched.get(row.id) ?? 0) < now - 5 * 60 * 1000) {
     lastTouched.set(row.id, now);
-    void db.from('api_tokens').update({ last_used_at: new Date().toISOString() }).eq('id', row.id);
+    // I builder di supabase-js partono solo se attesi: senza await la query non viene mai inviata.
+    await db.from('api_tokens').update({ last_used_at: new Date().toISOString() }).eq('id', row.id);
   }
 
   const profile = row.profiles as unknown as { email: string | null; plan: string };

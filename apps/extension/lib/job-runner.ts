@@ -110,7 +110,8 @@ async function runDeepView(job: Job, settings: ExtSettings): Promise<ChunkResult
   const state: DeepViewState = { ...emptyDeepViewState(), ...((job.progress.state as Partial<DeepViewState>) ?? {}) };
   const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [] };
   const step = nextDeepViewStep(state, params);
-  const total = params.pages + (params.enrich ? Math.min(params.maxAsins, Math.max(state.asins.length, params.pages * 48)) : 0);
+  const serpComplete = state.serpDone.length >= params.pages;
+  const total = params.pages + (params.enrich ? Math.min(params.maxAsins, serpComplete ? state.asins.length : Math.max(state.asins.length, params.pages * 48)) : 0);
 
   if (step.kind === 'serp') {
     for (const page of step.pages) {

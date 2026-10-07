@@ -57,14 +57,20 @@ export function parseRating(input: string | null | undefined): number | null {
   return n !== null && n >= 0 && n <= 5 ? n : null;
 }
 
-/** Formatta un numero con separatori italiani: 5432 → "5.432"; 7.99 → "7,99". */
+/**
+ * Formatta un numero con separatori italiani: 5432 -> "5.432"; 7.99 -> "7,99".
+ * Implementazione manuale (niente Intl) per avere lo stesso output su server e client
+ * ed evitare errori di idratazione in React.
+ */
 export function formatIt(n: number, decimals = 0): string {
-  return new Intl.NumberFormat('it-IT', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(n);
+  if (!Number.isFinite(n)) return '-';
+  const sign = n < 0 ? '-' : '';
+  const fixed = Math.abs(n).toFixed(decimals);
+  const [intPart, decPart] = fixed.split('.');
+  const grouped = (intPart ?? '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return sign + grouped + (decPart ? ',' + decPart : '');
 }
 
 export function formatEuroCents(cents: number): string {
-  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+  return formatIt(cents / 100, 2) + ' €';
 }

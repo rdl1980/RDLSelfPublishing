@@ -5,6 +5,17 @@ import type { SearchResultItem, SerpPage } from '../types/serp';
 import { isBotChallenge } from './captcha';
 import { attr, detectLocale, q, qa, qFirst, text } from './dom';
 
+const SPONSORED_PREFIX_RE = /^(annuncio sponsorizzato|sponsored ad|sponsored)\s*[–—:-]\s*/i;
+
+/** Primo prezzo positivo tra gli elementi dati; null se nessuno (o solo 0,00 €). */
+export function firstPositivePrice(els: Element[]): number | null {
+  for (const el of els) {
+    const c = parsePriceCents(text(el));
+    if (c !== null && c > 0) return c;
+  }
+  return null;
+}
+
 const RESULTS_RE =
   /(?:dei più di|di oltre|di più di|di|of over|of more than|of)\s+([\d.,]+)\s+(?:risultati|results)/i;
 
@@ -66,7 +77,8 @@ export function parseSearchCard(card: Element, position: number): SearchResultIt
   if (!asin || !/^[A-Z0-9]{10}$/.test(asin)) return null;
 
   const h2 = q(card, 'h2');
-  const title = attr(h2, 'aria-label') ?? (h2 ? text(h2) : null);
+  const rawTitle = attr(h2, 'aria-label') ?? (h2 ? text(h2) : null);
+  const title = rawTitle ? rawTitle.replace(SPONSORED_PREFIX_RE, '').trim() || null : null;
   const link = qFirst(card, ['h2 a', 'a.a-link-normal.s-no-outline', 'a.a-link-normal[href*="/dp/"]']);
   const href = attr(link, 'href');
 
@@ -89,8 +101,11 @@ export function parseSearchCard(card: Element, position: number): SearchResultIt
   ]);
   const reviewsCount = parseLocaleInt(attr(reviewsEl, 'aria-label') ?? text(reviewsEl));
 
-  const priceEl = qFirst(card, ['[data-cy="price-recipe"] .a-price .a-offscreen', '.a-price .a-offscreen']);
-  const priceCents = parsePriceCents(text(priceEl));
+  // Più prezzi possibili (es. "0,00 €" di Kindle Unlimited seguito dal prezzo reale): il primo > 0.
+  const priceCents = firstPositivePrice([
+    ...qa(card, '[data-cy="price-recipe"] .a-price .a-offscreen'),
+    ...qa(card, '.a-price .a-offscreen'),
+  ]);
 
   const img = q(card, 'img.s-image');
   const { author, pubDate } = parseMetaRow(card);

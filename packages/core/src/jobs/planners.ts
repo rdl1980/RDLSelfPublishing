@@ -9,11 +9,11 @@ export function chunkArray<T>(items: T[], size: number): T[][] {
   return out;
 }
 
-export interface DeepViewState {
+export type DeepViewState = {
   serpDone: number[];
   asins: string[];
   enriched: string[];
-}
+};
 
 export function emptyDeepViewState(): DeepViewState {
   return { serpDone: [], asins: [], enriched: [] };
@@ -32,10 +32,10 @@ export function nextDeepViewStep(
   return { kind: 'done' };
 }
 
-export interface ReverseAsinState {
+export type ReverseAsinState = {
   /** Keyword già verificate. */
   checked: string[];
-}
+};
 
 export function nextReverseAsinStep(state: ReverseAsinState, candidates: string[]): { kind: 'check'; keywords: string[] } | { kind: 'done' } {
   const todo = candidates.filter((c) => !state.checked.includes(c));

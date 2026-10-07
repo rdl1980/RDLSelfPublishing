@@ -17,6 +17,7 @@ export async function authenticateExtension(req: Request): Promise<ExtUser | nul
   const header = req.headers.get('authorization') ?? '';
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   if (!token.startsWith('rdl_')) return null;
+  if (!process.env.SUPABASE_SECRET_KEY) return null;
 
   const hash = createHash('sha256').update(token).digest('hex');
   const db = adminClient();
@@ -38,5 +39,11 @@ export async function authenticateExtension(req: Request): Promise<ExtUser | nul
 }
 
 export function unauthorized() {
+  if (!process.env.SUPABASE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: 'Server non configurato: manca SUPABASE_SECRET_KEY in apps/web/.env.local (vedi README)' },
+      { status: 503 },
+    );
+  }
   return NextResponse.json({ error: 'Token non valido o mancante' }, { status: 401 });
 }

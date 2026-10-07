@@ -2,6 +2,7 @@ import { BSR_ANCHORS_IT } from '@rdl/core';
 import { api, apiFetch, ApiError } from '@/lib/api-client';
 import { gcCache, getCachedProducts, putCachedProducts } from '@/lib/cache';
 import type { ConfigReply, ConnectionStatus, Msg, Reply } from '@/lib/messages';
+import { activeJobId, getPausedUntil, isRunning, pauseFor, resume, runPendingJobs } from '@/lib/orchestrator';
 import { getSettings } from '@/lib/settings';
 import { flushPending, getPending, sendOrQueue } from '@/lib/sync';
 
@@ -20,18 +21,15 @@ async function testConnection(): Promise<ConnectionStatus> {
   }
 }
 
-async function getPausedUntil(): Promise<number | null> {
-  const s = await chrome.storage.session.get('pausedUntil');
-  const v = s.pausedUntil as number | undefined;
-  return v && v > Date.now() ? v : null;
-}
-
 async function setBadge(): Promise<void> {
   const paused = await getPausedUntil();
   const pending = (await getPending()).length;
   if (paused) {
     await chrome.action.setBadgeText({ text: '⏸' });
     await chrome.action.setBadgeBackgroundColor({ color: '#dc2626' });
+  } else if (isRunning()) {
+    await chrome.action.setBadgeText({ text: '▶' });
+    await chrome.action.setBadgeBackgroundColor({ color: '#2563eb' });
   } else if (pending) {
     await chrome.action.setBadgeText({ text: String(pending) });
     await chrome.action.setBadgeBackgroundColor({ color: '#f59e0b' });
@@ -51,13 +49,21 @@ async function getConfig(): Promise<ConfigReply> {
   }
 }
 
+async function triggerJobs(trigger: string): Promise<number> {
+  void setBadge();
+  const n = await runPendingJobs(trigger);
+  void setBadge();
+  return n;
+}
+
 async function handle<M extends Msg>(msg: M): Promise<Reply<M>> {
   switch (msg.type) {
     case 'status:get': {
       const r = {
         connection: await testConnection(),
         pausedUntil: await getPausedUntil(),
-        activeJobs: 0,
+        activeJobs: isRunning() ? 1 : 0,
+        activeJobId: activeJobId(),
         pendingSync: (await getPending()).length,
       };
       return r as Reply<M>;
@@ -72,6 +78,10 @@ async function handle<M extends Msg>(msg: M): Promise<Reply<M>> {
     case 'products:get': {
       const { productCacheTtlMs } = await getSettings();
       return (await getCachedProducts(msg.asins, productCacheTtlMs)) as Reply<M>;
+    }
+    case 'cache:put': {
+      await putCachedProducts(msg.items);
+      return { ok: true } as Reply<M>;
     }
     case 'products:put': {
       await putCachedProducts(msg.items);
@@ -112,11 +122,25 @@ async function handle<M extends Msg>(msg: M): Promise<Reply<M>> {
       }
     }
     case 'bot:challenge': {
-      const pausedUntil = Date.now() + PAUSE_MS;
-      await chrome.storage.session.set({ pausedUntil });
+      const pausedUntil = await pauseFor(PAUSE_MS);
       void setBadge();
       console.warn('[RDL] verifica anti-bot su', msg.url, '— pausa 30 minuti');
       return { pausedUntil } as Reply<M>;
+    }
+    case 'jobs:run-now': {
+      if (isRunning()) return { started: false } as Reply<M>;
+      void triggerJobs('manual');
+      return { started: true } as Reply<M>;
+    }
+    case 'jobs:pause': {
+      const pausedUntil = await pauseFor((msg.minutes ?? 60) * 60 * 1000);
+      void setBadge();
+      return { pausedUntil } as Reply<M>;
+    }
+    case 'jobs:resume': {
+      await resume();
+      void setBadge();
+      return { ok: true } as Reply<M>;
     }
     case 'dev:save-fixture': {
       try {
@@ -134,7 +158,8 @@ async function handle<M extends Msg>(msg: M): Promise<Reply<M>> {
 }
 
 export default defineBackground(() => {
-  chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((msg: Msg & { target?: string }, _sender, sendResponse) => {
+    if (msg?.target === 'offscreen') return false; // destinato al documento offscreen
     handle(msg).then(sendResponse, (err) => sendResponse({ error: String(err) }));
     return true;
   });
@@ -142,6 +167,10 @@ export default defineBackground(() => {
   chrome.runtime.onInstalled.addListener(() => {
     void chrome.alarms.create('cache:gc', { periodInMinutes: 360 });
     void chrome.alarms.create('sync:retry', { periodInMinutes: 5 });
+    void chrome.alarms.create('jobs:tick', { periodInMinutes: 1 });
+  });
+  chrome.runtime.onStartup.addListener(() => {
+    void chrome.alarms.create('jobs:tick', { periodInMinutes: 1 });
   });
 
   chrome.alarms.onAlarm.addListener(async (alarm) => {
@@ -152,6 +181,9 @@ export default defineBackground(() => {
     if (alarm.name === 'sync:retry') {
       if ((await getPending()).length) await flushPending();
       await setBadge();
+    }
+    if (alarm.name === 'jobs:tick') {
+      await triggerJobs('alarm');
     }
   });
 

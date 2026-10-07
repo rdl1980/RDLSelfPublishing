@@ -28,6 +28,9 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  if (!user && !isPublic && pathname.startsWith('/api/')) {
+    return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
+  }
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';

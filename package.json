@@ -1,0 +1,27 @@
+{
+  "name": "rdl-self-publishing",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RDL Self Publishing — ricerca di mercato e tracking per autori KDP su Amazon.it (web app + estensione Chrome)",
+  "workspaces": ["apps/*", "packages/*"],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev:web": "npm run dev -w @rdl/web",
+    "dev:ext": "npm run dev -w @rdl/extension",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,css}\"",
+    "db:types": "node scripts/gen-db-types.mjs",
+    "db:push": "supabase db push",
+    "mint-token": "node scripts/mint-token.mjs",
+    "smoke": "node scripts/smoke-autocomplete.mjs"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.0",
+    "supabase": "^2.40.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}

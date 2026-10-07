@@ -1,0 +1,6 @@
+# Configurazione Supabase CLI (per `supabase db push` / `gen types` verso il progetto hosted).
+# Collega il progetto con: npx supabase link --project-ref <ref>
+project_id = "rdl-self-publishing"
+
+[db]
+major_version = 17

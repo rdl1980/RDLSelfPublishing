@@ -6,8 +6,10 @@
 /** Converte "5.432", "5,432", "1.234,56", "1,234.56", "94" in numero. Ritorna null se non riconosciuto. */
 export function parseLocaleNumber(input: string | null | undefined): number | null {
   if (!input) return null;
-  const s = input.replace(/[^\d.,-]/g, '').trim();
-  if (!s || !/\d/.test(s)) return null;
+  // Primo token numerico: cifre con eventuali separatori interni (es. "n. 5.432 in Libri" → "5.432").
+  const m = input.match(/-?\d(?:[\d.,]*\d)?/);
+  if (!m) return null;
+  const s = m[0];
 
   const lastDot = s.lastIndexOf('.');
   const lastComma = s.lastIndexOf(',');

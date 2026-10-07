@@ -18,7 +18,7 @@ export type DetailKey = keyof typeof DETAIL_LABELS;
 
 /** Rimuove i caratteri invisibili di direzionalità e i due punti che Amazon mette nelle etichette. */
 export function cleanLabel(label: string): string {
-  return label.replace(/[‎‏​ ]/g, ' ').replace(/:/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  return label.replace(/[\u200e\u200f\u200b\u00a0]/g, ' ').replace(/:/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 /** Riconosce l'etichetta (es. "Editore :") e ritorna la chiave corrispondente. */

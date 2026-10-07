@@ -10,7 +10,7 @@ export default defineConfig({
     name: 'RDL Self Publishing',
     description: 'Metriche KDP (BSR, vendite stimate, royalty) sulle pagine di amazon.it',
     default_locale: 'it',
-    permissions: ['storage', 'alarms', 'offscreen', 'downloads'],
+    permissions: ['storage', 'alarms', 'offscreen', 'downloads', 'scripting', 'activeTab'],
     host_permissions: [
       'https://www.amazon.it/*',
       'https://completion.amazon.it/*',

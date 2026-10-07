@@ -2,8 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // App interamente dinamica (sessione utente): niente prerender con cacheComponents.
+  transpilePackages: ['@rdl/core'],
   turbopack: {
     rules: {
       "*.css": {

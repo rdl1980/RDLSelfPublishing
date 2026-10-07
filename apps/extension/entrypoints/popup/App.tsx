@@ -65,6 +65,16 @@ export function App() {
         <button className={btn} onClick={togglePause}>
           {status?.pausedUntil ? 'Riprendi' : 'Pausa 1 ora'}
         </button>
+        <button
+          className={btn}
+          disabled={!status?.connection.connected}
+          onClick={async () => {
+            await sendMessage({ type: 'tracking:run-now' });
+            setNote('Tracking giornaliero avviato: i job compaiono nella web app');
+          }}
+        >
+          Tracking ora
+        </button>
         <button className={btn} onClick={() => chrome.runtime.openOptionsPage()}>
           Opzioni
         </button>

@@ -1,6 +1,7 @@
 'use client';
 
 import { buildSearchUrl, extractAsin, type SearchAlias } from '@rdl/core';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Badge, Button, Card, Input } from '@/components/ui';
@@ -84,11 +85,14 @@ export function TrackedKeywordsList({ rows }: { rows: TrackedKeywordRow[] }) {
             {rows.map((r) => (
               <tr key={r.id}>
                 <td className="px-3 py-2">
-                  <a href={buildSearchUrl(r.keyword, r.alias as SearchAlias)} target="_blank" rel="noreferrer" className="font-medium hover:underline">
+                  <Link href={`/tracking/keyword/${r.id}`} className="font-medium hover:underline">
                     {r.keyword}
-                  </a>
+                  </Link>
                   <div className="text-xs text-slate-400">
-                    {r.alias} · {r.pages} pagine
+                    {r.alias} · {r.pages} pagine ·{' '}
+                    <a href={buildSearchUrl(r.keyword, r.alias as SearchAlias)} target="_blank" rel="noreferrer" className="hover:underline">
+                      amazon.it ↗
+                    </a>
                   </div>
                 </td>
                 <td className="px-3 py-2">

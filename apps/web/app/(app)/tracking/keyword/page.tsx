@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { RunTrackingButton } from '@/components/tracking/RunTrackingButton';
 import { TrackedKeywordsList } from '@/components/tracking/TrackedKeywordsList';
 import { PageTitle } from '@/components/ui';
 import { createClient } from '@/lib/supabase/server';
@@ -19,9 +21,9 @@ export default async function TrackingKeywordPage() {
   }));
   return (
     <>
-      <PageTitle>Tracking keyword</PageTitle>
+      <PageTitle actions={<RunTrackingButton />}>Tracking keyword</PageTitle>
       <p className="mb-4 text-sm text-slate-600">
-        Le keyword tracciate vengono cercate ogni giorno dall&apos;estensione (Fase 5) per registrare la posizione degli ASIN osservati.
+        Le keyword tracciate vengono cercate ogni giorno dall&apos;estensione per registrare la posizione degli ASIN osservati. <Link href="/tracking/asin" className="underline">Tracking ASIN →</Link>
       </p>
       <TrackedKeywordsList rows={rows} />
     </>

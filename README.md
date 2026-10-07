@@ -34,6 +34,20 @@ npm install
    → Modalità sviluppatore → *Carica estensione non pacchettizzata* → `apps/extension/.output/chrome-mv3`.
    Apri le Opzioni dell'estensione, inserisci URL della web app e token, "Salva e verifica".
 
+## Come si usa
+
+| Funzione | Dove | Cosa fa |
+|---|---|---|
+| Ricerca keyword | web app → Keyword | espande una keyword seme con l'autocomplete di amazon.it, salva sessioni, esporta CSV, aggiunge a nicchie/tracking |
+| Quick View | estensione, pagine di ricerca amazon.it | badge per ogni risultato (BSR, vendite/mese stimate, ricavo, royalty, pagine, data, KDP, A+) e riepilogo nicchia con punteggio |
+| Pannello prodotto | estensione, pagine `/dp/` | stime, royalty, categorie, pulsanti Traccia ASIN e Reverse ASIN |
+| Deep View | web app → Deep View | job eseguito dall'estensione: 1-5 pagine di risultati arricchite con i dati prodotto, tabella ordinabile, CSV |
+| Reverse ASIN | web app → Reverse ASIN | per quali keyword si posiziona un libro (candidate da titolo + autocomplete, verifica fino a 3 pagine) |
+| Tracking | web app → Tracking | posizione giornaliera delle keyword e storico BSR/prezzo/recensioni degli ASIN; alarm giornaliero nell'estensione all'ora scelta nelle Opzioni |
+| Calcolatori | web app → Calcolatori | BSR → vendite (fattori calibrabili) e royalty KDP cartaceo/Kindle |
+
+I job (Deep View, Reverse ASIN, tracking) vengono prelevati dall'estensione ogni minuto quando Chrome è aperto; dal popup «Esegui ora» li avvia subito.
+
 ## Script
 
 | Comando | Effetto |

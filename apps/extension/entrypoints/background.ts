@@ -49,6 +49,31 @@ async function getConfig(): Promise<ConfigReply> {
   }
 }
 
+/** Alarm giornaliero all'ora scelta nelle Opzioni: crea i job di tracking sul server e li esegue. */
+async function scheduleDailyTracking(): Promise<void> {
+  const { trackingHour } = await getSettings();
+  const next = new Date();
+  next.setHours(trackingHour, 0, 0, 0);
+  if (next.getTime() <= Date.now()) next.setDate(next.getDate() + 1);
+  await chrome.alarms.create('tracking:daily', { when: next.getTime(), periodInMinutes: 24 * 60 });
+}
+
+async function runDailyTracking(): Promise<void> {
+  const { apiToken } = await getSettings();
+  if (!apiToken) return;
+  // Evita doppie esecuzioni nello stesso giorno (es. riavvio di Chrome)
+  const day = new Date().toISOString().slice(0, 10);
+  const s = await chrome.storage.local.get('lastTrackingDay');
+  if (s.lastTrackingDay === day) return;
+  try {
+    await apiFetch('/api/ext/jobs/materialize', { method: 'POST', body: '{}' });
+    await chrome.storage.local.set({ lastTrackingDay: day });
+    await triggerJobs('tracking');
+  } catch (e) {
+    console.warn('[RDL] tracking giornaliero non avviato:', e);
+  }
+}
+
 async function triggerJobs(trigger: string): Promise<number> {
   void setBadge();
   const n = await runPendingJobs(trigger);
@@ -132,6 +157,11 @@ async function handle<M extends Msg>(msg: M): Promise<Reply<M>> {
       void triggerJobs('manual');
       return { started: true } as Reply<M>;
     }
+    case 'tracking:run-now': {
+      await chrome.storage.local.remove('lastTrackingDay');
+      void runDailyTracking();
+      return { ok: true } as Reply<M>;
+    }
     case 'jobs:pause': {
       const pausedUntil = await pauseFor((msg.minutes ?? 60) * 60 * 1000);
       void setBadge();
@@ -168,9 +198,14 @@ export default defineBackground(() => {
     void chrome.alarms.create('cache:gc', { periodInMinutes: 360 });
     void chrome.alarms.create('sync:retry', { periodInMinutes: 5 });
     void chrome.alarms.create('jobs:tick', { periodInMinutes: 1 });
+    void scheduleDailyTracking();
   });
   chrome.runtime.onStartup.addListener(() => {
     void chrome.alarms.create('jobs:tick', { periodInMinutes: 1 });
+    void scheduleDailyTracking();
+  });
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.settings) void scheduleDailyTracking();
   });
 
   chrome.alarms.onAlarm.addListener(async (alarm) => {
@@ -184,6 +219,9 @@ export default defineBackground(() => {
     }
     if (alarm.name === 'jobs:tick') {
       await triggerJobs('alarm');
+    }
+    if (alarm.name === 'tracking:daily') {
+      await runDailyTracking();
     }
   });
 

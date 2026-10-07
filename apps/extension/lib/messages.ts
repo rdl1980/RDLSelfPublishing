@@ -34,6 +34,7 @@ export type Msg =
   | { type: 'jobs:run-now' }
   | { type: 'jobs:pause'; minutes?: number }
   | { type: 'jobs:resume' }
+  | { type: 'tracking:run-now' }
   | { type: 'dev:save-fixture'; html: string; name: string };
 
 export interface ConfigReply {
@@ -68,6 +69,8 @@ export type Reply<M extends Msg> = M extends { type: 'status:get' }
                           ? { pausedUntil: number }
                           : M extends { type: 'jobs:resume' }
                             ? { ok: true }
+                            : M extends { type: 'tracking:run-now' }
+                              ? { ok: true }
                             : M extends { type: 'dev:save-fixture' }
                               ? { ok: boolean }
                               : never;

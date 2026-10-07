@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Alert, Button, Card, Input } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
+import { ExtensionBridge } from './ExtensionBridge';
 
 interface TokenRow {
   id: string;
@@ -71,6 +72,7 @@ export function TokensPanel({ tokens }: { tokens: TokenRow[] }) {
         </Alert>
       )}
       {error && <Alert kind="error">{error}</Alert>}
+      <ExtensionBridge token={fresh} />
       <ul className="mt-3 divide-y divide-slate-100 text-sm">
         {tokens.map((t) => (
           <li key={t.id} className="flex items-center justify-between py-1.5">

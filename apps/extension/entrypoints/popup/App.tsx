@@ -40,7 +40,9 @@ export function App() {
 
   return (
     <div className="w-80 p-4 text-sm text-slate-800">
-      <h1 className="mb-2 text-base font-semibold">RDL Self Publishing</h1>
+      <h1 className="mb-2 flex items-center gap-2 text-base font-semibold">
+        <img src="/icon/48.png" alt="" className="h-6 w-6 rounded" /> RDL Self Publishing
+      </h1>
       {error && <p className="text-red-600">{error}</p>}
       {!status && !error && <p className="text-slate-500">Verifica connessione…</p>}
       {status && (

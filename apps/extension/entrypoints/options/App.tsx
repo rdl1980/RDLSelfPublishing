@@ -23,7 +23,9 @@ export function App() {
 
   return (
     <div className="mx-auto max-w-lg p-6 text-sm text-slate-800">
-      <h1 className="mb-4 text-lg font-semibold">Opzioni — RDL Self Publishing</h1>
+      <h1 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+        <img src="/icon/48.png" alt="" className="h-7 w-7 rounded" /> Opzioni — RDL Self Publishing
+      </h1>
       <form onSubmit={onSave} className="space-y-4">
         <label className="block">
           URL della web app

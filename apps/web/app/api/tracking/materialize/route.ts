@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { materializeTrackingJobs } from '@/lib/db/tracking';
+import { ADMIN_MISSING_MESSAGE, adminConfigured } from '@/lib/supabase/admin';
 import { getUser } from '@/lib/supabase/server';
 
 /** Dalla web app: "Esegui il tracking oggi" (i job vengono poi eseguiti dall'estensione). */

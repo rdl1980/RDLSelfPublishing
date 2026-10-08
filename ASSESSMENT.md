@@ -1,5 +1,12 @@
 # Assessment: dove siamo e cosa manca
 
+> **Aggiornamento dell'8 ottobre 2026, dopo l'assessment.** I tre punti di sicurezza del §4 (ponte estensione, migrazioni, linter Supabase)
+> sono stati sistemati, insieme ai piccoli bug del §4.10, ed è stata aggiunta la CI. Sono state implementate le dieci feature proposte
+> (calibrazione BSR, confronto nicchie, Reverse ASIN in massa, avvisi, stagionalità, analisi inserzioni, category explorer, tabella prezzi,
+> report, 7 campi KDP): vedi il README e la cronologia dei commit. Restano validi i punti che richiedono dati o prove reali: verifica
+> delle variabili su Vercel, signup Supabase, fixture Kindle e CAPTCHA, verifica costi KDP, prova end to end del tracking in Chrome.
+> Il parser delle classifiche di categoria è testato solo su una griglia sintetica: alla prima scansione salva la pagina come fixture.
+
 Data: 8 ottobre 2026. Commit analizzato: `110524c` (branch `main`, albero di lavoro pulito, nessuna modifica non committata).
 Verifiche eseguite in una sessione cloud pulita (Node 22.22, npm 10.9) e, per lo stato reale di produzione, interrogando direttamente il database Supabase.
 

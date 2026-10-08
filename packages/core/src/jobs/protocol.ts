@@ -48,6 +48,9 @@ export const ProductSchema = z.object({
   dimensions: z.string().nullable(),
   hasAplus: z.boolean(),
   categories: z.array(z.object({ id: z.string().nullable(), name: z.string() })),
+  bullets: z.array(z.string()).default([]),
+  description: z.string().nullable().default(null),
+  aplusModules: z.number().int().nullable().default(null),
 });
 
 export const ProductSnapshotInputSchema = z.object({

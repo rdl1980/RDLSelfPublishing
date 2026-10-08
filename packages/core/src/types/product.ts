@@ -31,6 +31,10 @@ export interface Product {
   dimensions: string | null;
   hasAplus: boolean;
   categories: { id: string | null; name: string }[];
+  /** Contenuto dell'inserzione (per l'analisi dei concorrenti). */
+  bullets: string[];
+  description: string | null;
+  aplusModules: number | null;
 }
 
 /** Dati che variano nel tempo (una riga di product_snapshots). */

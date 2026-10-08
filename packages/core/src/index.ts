@@ -13,6 +13,7 @@ export * from './parsers/captcha';
 export * from './parsers/bsr';
 export * from './parsers/search-page';
 export * from './parsers/product-page';
+export * from './parsers/listing';
 
 export * from './config/bsr-anchors.it';
 export * from './config/kdp-print-costs.eu';
@@ -24,6 +25,7 @@ export * from './models/royalty';
 export * from './models/niche-score';
 export * from './models/calibration';
 export * from './models/alerts';
+export * from './models/listing';
 
 export * from './keywords/normalize';
 export * from './keywords/expansion';

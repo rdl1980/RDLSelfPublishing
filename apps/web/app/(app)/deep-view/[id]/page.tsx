@@ -63,6 +63,9 @@ export default async function DeepViewDetail({ params }: PageProps<'/deep-view/[
             <Link href={`/deep-view/${dv.id}/keyword`} className="underline">
               keyword dei concorrenti
             </Link>
+            <Link href={`/deep-view/${dv.id}/inserzioni`} className="underline">
+              inserzioni
+            </Link>
             <Link href="/deep-view/confronto" className="underline">
               confronto nicchie
             </Link>

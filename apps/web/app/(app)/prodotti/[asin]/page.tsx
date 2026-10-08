@@ -56,6 +56,22 @@ export default async function ProductPage({ params }: PageProps<'/prodotti/[asin
               </ul>
             </Card>
           )}
+          {(product.description || product.bullets.length > 0) && (
+            <Card>
+              <h3 className="mb-1 text-sm font-semibold">
+                Inserzione{product.aplus_modules != null && ` · ${product.aplus_modules} moduli A+`}
+                {product.listing_updated_at && <span className="ml-2 text-xs font-normal text-slate-400">raccolta il {new Date(product.listing_updated_at).toLocaleDateString('it-IT')}</span>}
+              </h3>
+              {product.bullets.length > 0 && (
+                <ul className="mb-2 list-disc pl-5 text-sm">
+                  {product.bullets.map((b, i) => (
+                    <li key={i}>{b}</li>
+                  ))}
+                </ul>
+              )}
+              {product.description && <p className="whitespace-pre-line text-sm text-slate-700">{product.description}</p>}
+            </Card>
+          )}
           <Card>
             <h3 className="mb-1 text-sm font-semibold">Storico ({snapshots?.length ?? 0} rilevazioni)</h3>
             <table className="w-full text-sm">

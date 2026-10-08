@@ -10,6 +10,7 @@ import {
 import type { CategoryRank, FormatOffer, ParsedProduct, Product, ProductSnapshotInput } from '../types/product';
 import { categoryIdFromHref, parseBsrText, type BsrInfo } from './bsr';
 import { isBotChallenge } from './captcha';
+import { parseListing } from './listing';
 import { attr, detectLocale, q, qa, qFirst, text } from './dom';
 import { firstPositivePrice } from './search-page';
 
@@ -165,6 +166,7 @@ export function parseProductPage(doc: Document, hints: { asin?: string | null } 
   const pubDate = parseLocaleDate(get('pubDate'));
   const pageCount = parseLocaleInt(get('printLength'));
 
+  const listing = parseListing(doc);
   const bsrEntry = details.find((d) => d.key === 'bsr');
   const bsr = parseBsrEntry(bsrEntry);
   const categories: Product['categories'] = bsr.ranks.map((r) => ({ id: r.id, name: r.name }));
@@ -205,6 +207,9 @@ export function parseProductPage(doc: Document, hints: { asin?: string | null } 
     dimensions: get('dimensions'),
     hasAplus: hasAplusContent(doc),
     categories,
+    bullets: listing.bullets,
+    description: listing.description,
+    aplusModules: listing.aplusModules,
   };
 
   const snapshot: ProductSnapshotInput = {

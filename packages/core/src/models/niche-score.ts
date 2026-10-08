@@ -96,7 +96,8 @@ export function summarizeNiche(
     const m = estimateMonthlySales(e.snapshot.bsr, e.snapshot.bsrStore ?? 'books', opts.anchors);
     if (m == null) continue;
     salesTop10 = (salesTop10 ?? 0) + m;
-    const price = i.priceCents ?? e.snapshot.priceCents;
+    // Un prezzo 0 (es. "0,00 €" di Kindle Unlimited) non è un prezzo: si prova lo snapshot, altrimenti si salta.
+    const price = [i.priceCents, e.snapshot.priceCents].find((p): p is number => p != null && p > 0) ?? null;
     if (price != null) revenueTop10 = (revenueTop10 ?? 0) + m * price;
   }
 

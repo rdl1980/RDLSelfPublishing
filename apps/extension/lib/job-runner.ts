@@ -63,7 +63,7 @@ async function enrichAsins(asins: string[], settings: ExtSettings): Promise<{ pr
   let bot = false;
   // cache dal service worker (24h) per non riscaricare pagine note
   const cached = await sendMessage({ type: 'products:get', asins }).catch(() => ({ hits: {}, misses: asins }));
-  for (const [asin, c] of Object.entries(cached.hits)) products.push({ product: c.product, snapshot: c.snapshot, capturedAt: new Date(c.fetchedAt).toISOString() });
+  for (const c of Object.values(cached.hits)) products.push({ product: c.product, snapshot: c.snapshot, capturedAt: new Date(c.fetchedAt).toISOString() });
   const fresh: { product: ProductPayload['product']; snapshot: ProductPayload['snapshot'] }[] = [];
   const { errors } = await runPool(
     cached.misses,
@@ -110,8 +110,13 @@ async function runDeepView(job: Job, settings: ExtSettings): Promise<ChunkResult
   const state: DeepViewState = { ...emptyDeepViewState(), ...((job.progress.state as Partial<DeepViewState>) ?? {}) };
   const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [] };
   const step = nextDeepViewStep(state, params);
-  const serpComplete = state.serpDone.length >= params.pages;
-  const total = params.pages + (params.enrich ? Math.min(params.maxAsins, serpComplete ? state.asins.length : Math.max(state.asins.length, params.pages * 48)) : 0);
+  // Totale per la barra di avanzamento: finché la SERP non è completa si stima ~48 risultati per pagina,
+  // poi si usa il numero reale di ASIN trovati (così un Deep View con 3 risultati non mostra 4/98).
+  const total = () => {
+    const serpComplete = state.serpDone.length >= params.pages;
+    const enrich = params.enrich ? Math.min(params.maxAsins, serpComplete ? state.asins.length : Math.max(state.asins.length, params.pages * 48)) : 0;
+    return params.pages + enrich;
+  };
 
   if (step.kind === 'serp') {
     for (const page of step.pages) {
@@ -121,7 +126,7 @@ async function runDeepView(job: Job, settings: ExtSettings): Promise<ChunkResult
       for (const it of serp.items) if (!state.asins.includes(it.asin) && state.asins.length < params.maxAsins) state.asins.push(it.asin);
     }
     const done = nextDeepViewStep(state, params).kind === 'done';
-    return { ok: true, done, state, progress: { done: state.serpDone.length, total, step: 'serp', message: `${state.serpDone.length}/${params.pages} pagine, ${state.asins.length} ASIN` }, payload };
+    return { ok: true, done, state, progress: { done: state.serpDone.length, total: total(), step: 'serp', message: `${state.serpDone.length}/${params.pages} pagine, ${state.asins.length} ASIN` }, payload };
   }
   if (step.kind === 'enrich') {
     const { products, failed, bot } = await enrichAsins(step.asins, settings);
@@ -134,14 +139,14 @@ async function runDeepView(job: Job, settings: ExtSettings): Promise<ChunkResult
       ok: true,
       done,
       state,
-      progress: { done: params.pages + state.enriched.length, total, step: 'enrich', message: `${state.enriched.length}/${Math.min(params.maxAsins, state.asins.length)} prodotti` },
+      progress: { done: params.pages + state.enriched.length, total: total(), step: 'enrich', message: `${state.enriched.length}/${Math.min(params.maxAsins, state.asins.length)} prodotti` },
       payload,
     };
   }
-  return { ok: true, done: true, state, progress: { done: total, total, step: 'done' }, payload };
+  return { ok: true, done: true, state, progress: { done: total(), total: total(), step: 'done' }, payload };
 }
 
-async function runReverseAsin(job: Job, settings: ExtSettings): Promise<ChunkResult> {
+async function runReverseAsin(job: Job, _settings: ExtSettings): Promise<ChunkResult> {
   const params = parseJobParams('reverse_asin', job.params);
   const state: ReverseAsinState = { checked: [], ...((job.progress.state as Partial<ReverseAsinState>) ?? {}) };
   const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [] };

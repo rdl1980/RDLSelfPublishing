@@ -27,6 +27,7 @@ export * from './models/niche-score';
 export * from './models/calibration';
 export * from './models/alerts';
 export * from './models/listing';
+export * from './models/pricing';
 
 export * from './keywords/normalize';
 export * from './keywords/expansion';

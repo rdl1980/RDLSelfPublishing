@@ -13,7 +13,7 @@ import { adminClient } from '@/lib/supabase/admin';
 import type { Json } from '@/lib/supabase/database.types';
 import { recordKeywordDailyStats } from './keyword-stats';
 
-export type SnapshotSource = 'quick_view' | 'product_page' | 'deep_view' | 'tracker' | 'manual';
+export type SnapshotSource = 'quick_view' | 'product_page' | 'deep_view' | 'tracker' | 'manual' | 'category';
 export type SerpSource = 'quick_view' | 'deep_view' | 'tracker' | 'reverse_asin';
 
 export async function anchorsForUser(userId: string): Promise<Record<BsrStore, BsrAnchor[]>> {

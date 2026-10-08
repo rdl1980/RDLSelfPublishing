@@ -56,6 +56,20 @@ export async function POST(req: Request) {
       await db.from('reverse_asin_runs').update({ job_id: job.id }).eq('id', run.id);
       return NextResponse.json({ jobId: job.id, runId: run.id });
     }
+    if (type === 'category_scan') {
+      const categoryId = String(params.categoryId ?? '');
+      const kind = params.kind === 'new_releases' ? 'new_releases' : 'bestsellers';
+      const pages = Number(params.pages ?? 1);
+      const { data: scan, error } = await db
+        .from('category_scans')
+        .insert({ user_id: user.id, category_id: categoryId, kind, pages, category_name: typeof params.categoryName === 'string' ? params.categoryName : null })
+        .select('id')
+        .single();
+      if (error) throw error;
+      const job = await createJob(user.id, type, { ...params, scanId: scan.id }, { priority: priority ?? 4 });
+      await db.from('category_scans').update({ job_id: job.id }).eq('id', scan.id);
+      return NextResponse.json({ jobId: job.id, scanId: scan.id });
+    }
     const job = await createJob(user.id, type as JobType, params, { priority });
     return NextResponse.json({ jobId: job.id });
   } catch (e) {

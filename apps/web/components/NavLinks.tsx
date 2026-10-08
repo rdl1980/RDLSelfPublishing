@@ -8,6 +8,7 @@ const NAV: { href: string; label: string; match?: string; badgeKey?: 'alerts' }[
   { href: '/keyword', label: 'Keyword' },
   { href: '/deep-view', label: 'Deep View' },
   { href: '/reverse-asin', label: 'Reverse ASIN' },
+  { href: '/categorie', label: 'Categorie' },
   { href: '/tracking/keyword', label: 'Tracking', match: '/tracking' },
   { href: '/avvisi', label: 'Avvisi', badgeKey: 'alerts' },
   { href: '/nicchie', label: 'Nicchie' },

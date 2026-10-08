@@ -1,14 +1,20 @@
 import {
   BotChallengeError,
+  buildCategoryUrl,
   buildSearchUrl,
+  emptyCategoryScanState,
   emptyDeepViewState,
   ENRICH_CHUNK_SIZE,
+  nextCategoryScanStep,
   nextDeepViewStep,
   nextReverseAsinStep,
+  parseCategoryPage,
   parseJobParams,
   parseProductPage,
   parseSearchPage,
   productUrl,
+  type CategoryPagePayload,
+  type CategoryScanState,
   type DeepViewState,
   type Job,
   type JobProgress,
@@ -33,6 +39,7 @@ export interface ChunkResult {
     products: ProductPayload[];
     ranks: { trackedKeywordId: string; asin: string; found: boolean; page: number | null; position: number | null; organicPosition: number | null; isSponsored: boolean | null }[];
     reverse: { keyword: string; asin?: string; found: boolean; page: number | null; position: number | null; organicPosition: number | null; totalResultsEst: number | null }[];
+    category: CategoryPagePayload[];
   };
 }
 export interface ChunkError {
@@ -97,6 +104,8 @@ export async function runChunk(job: Job, settings: ExtSettings): Promise<ChunkRe
       case 'track_asins':
       case 'enrich_asins':
         return await runTrackAsins(job, settings);
+      case 'category_scan':
+        return await runCategoryScan(job, settings);
       default:
         return { ok: false, error: `Tipo di job non supportato: ${job.type}`, bot: false };
     }
@@ -108,7 +117,7 @@ export async function runChunk(job: Job, settings: ExtSettings): Promise<ChunkRe
 async function runDeepView(job: Job, settings: ExtSettings): Promise<ChunkResult> {
   const params = parseJobParams('deep_view', job.params);
   const state: DeepViewState = { ...emptyDeepViewState(), ...((job.progress.state as Partial<DeepViewState>) ?? {}) };
-  const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [] };
+  const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [], category: [] };
   const step = nextDeepViewStep(state, params);
   // Totale per la barra di avanzamento: finché la SERP non è completa si stima ~48 risultati per pagina,
   // poi si usa il numero reale di ASIN trovati (così un Deep View con 3 risultati non mostra 4/98).
@@ -149,7 +158,7 @@ async function runDeepView(job: Job, settings: ExtSettings): Promise<ChunkResult
 async function runReverseAsin(job: Job, _settings: ExtSettings): Promise<ChunkResult> {
   const params = parseJobParams('reverse_asin', job.params);
   const state: ReverseAsinState = { checked: [], ...((job.progress.state as Partial<ReverseAsinState>) ?? {}) };
-  const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [] };
+  const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [], category: [] };
   const step = nextReverseAsinStep(state, params.candidates);
   if (step.kind === 'done') return { ok: true, done: true, state, progress: { done: params.candidates.length, total: params.candidates.length, step: 'done' }, payload };
 
@@ -185,7 +194,7 @@ async function runTrackKeyword(job: Job, settings: ExtSettings): Promise<ChunkRe
     pagesDone: number;
     found: Record<string, { page: number; position: number; organicPosition: number | null; isSponsored: boolean }>;
   };
-  const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [] };
+  const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [], category: [] };
   const batchEnd = Math.min(params.pages, state.pagesDone + 3);
   for (let page = state.pagesDone + 1; page <= batchEnd; page++) {
     const serp = await fetchSerp(params.keyword, params.alias, page);
@@ -218,7 +227,7 @@ async function runTrackKeyword(job: Job, settings: ExtSettings): Promise<ChunkRe
 async function runTrackAsins(job: Job, settings: ExtSettings): Promise<ChunkResult> {
   const params = job.type === 'track_asins' ? parseJobParams('track_asins', job.params) : parseJobParams('enrich_asins', job.params);
   const state = { done: [] as string[], ...((job.progress.state as { done?: string[] }) ?? {}) } as { done: string[] };
-  const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [] };
+  const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [], category: [] };
   const todo = params.asins.filter((a) => !state.done.includes(a)).slice(0, ENRICH_CHUNK_SIZE);
   if (todo.length) {
     const { products, failed, bot } = await enrichAsins(todo, settings);
@@ -228,4 +237,34 @@ async function runTrackAsins(job: Job, settings: ExtSettings): Promise<ChunkResu
   }
   const done = params.asins.every((a) => state.done.includes(a));
   return { ok: true, done, state, progress: { done: state.done.length, total: params.asins.length, step: 'enrich' }, payload };
+}
+
+async function runCategoryScan(job: Job, settings: ExtSettings): Promise<ChunkResult> {
+  const params = parseJobParams('category_scan', job.params);
+  const state: CategoryScanState = { ...emptyCategoryScanState(), ...((job.progress.state as Partial<CategoryScanState>) ?? {}) };
+  const payload: ChunkResult['payload'] = { serp: [], products: [], ranks: [], reverse: [], category: [] };
+  const step = nextCategoryScanStep(state, params);
+  const total = () => params.pages + (params.enrich ? Math.min(params.maxAsins, state.pagesDone.length >= params.pages ? state.asins.length : Math.max(state.asins.length, params.pages * 50)) : 0);
+
+  if (step.kind === 'pages') {
+    for (const page of step.pages) {
+      const doc = await fetchAmazonDocument(buildCategoryUrl(params.categoryId, params.kind, params.store, page));
+      const parsed = parseCategoryPage(doc, { categoryId: params.categoryId, kind: params.kind, page });
+      payload.category.push({ categoryId: params.categoryId, categoryName: parsed.categoryName, kind: params.kind, page, capturedAt: now(), items: parsed.items });
+      state.pagesDone.push(page);
+      for (const it of parsed.items) if (!state.asins.includes(it.asin) && state.asins.length < params.maxAsins) state.asins.push(it.asin);
+      if (step.pages.length > 1) await new Promise((r) => setTimeout(r, 500 + Math.random() * 700));
+    }
+    const done = nextCategoryScanStep(state, params).kind === 'done';
+    return { ok: true, done, state, progress: { done: state.pagesDone.length, total: total(), step: 'pages', message: `${state.pagesDone.length}/${params.pages} pagine, ${state.asins.length} ASIN` }, payload };
+  }
+  if (step.kind === 'enrich') {
+    const { products, failed, bot } = await enrichAsins(step.asins, settings);
+    payload.products = products;
+    state.enriched.push(...step.asins.filter((a) => !failed.includes(a) || !bot));
+    if (bot) throw new BotChallengeError('category');
+    const done = nextCategoryScanStep(state, params).kind === 'done';
+    return { ok: true, done, state, progress: { done: params.pages + state.enriched.length, total: total(), step: 'enrich', message: `${state.enriched.length}/${Math.min(params.maxAsins, state.asins.length)} prodotti` }, payload };
+  }
+  return { ok: true, done: true, state, progress: { done: total(), total: total(), step: 'done' }, payload };
 }

@@ -14,6 +14,7 @@ export * from './parsers/bsr';
 export * from './parsers/search-page';
 export * from './parsers/product-page';
 export * from './parsers/listing';
+export * from './parsers/category-page';
 
 export * from './config/bsr-anchors.it';
 export * from './config/kdp-print-costs.eu';

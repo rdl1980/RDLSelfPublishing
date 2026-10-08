@@ -9,7 +9,8 @@
     "build": "wxt build",
     "zip": "wxt zip",
     "typecheck": "wxt prepare && tsc --noEmit",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "lint": "eslint entrypoints lib components"
   },
   "dependencies": {
     "@rdl/core": "*",
@@ -18,13 +19,16 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.30.0",
     "@tailwindcss/vite": "^4.1.0",
     "@types/chrome": "^0.1.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@wxt-dev/module-react": "^1.1.0",
+    "eslint": "^9.30.0",
     "tailwindcss": "^4.1.0",
     "typescript": "^5.9.0",
+    "typescript-eslint": "^8.40.0",
     "wxt": "^0.21.0"
   }
 }

@@ -11,8 +11,9 @@ import {
 import { anchorsFromSettings, parseProfileSettings } from '@/lib/settings';
 import { adminClient } from '@/lib/supabase/admin';
 import type { Json } from '@/lib/supabase/database.types';
+import { recordKeywordDailyStats } from './keyword-stats';
 
-export type SnapshotSource = 'quick_view' | 'product_page' | 'deep_view' | 'tracker' | 'manual';
+export type SnapshotSource = 'quick_view' | 'product_page' | 'deep_view' | 'tracker' | 'manual' | 'category';
 export type SerpSource = 'quick_view' | 'deep_view' | 'tracker' | 'reverse_asin';
 
 export async function anchorsForUser(userId: string): Promise<Record<BsrStore, BsrAnchor[]>> {
@@ -72,6 +73,10 @@ export async function ingestProducts(
     dimensions: product.dimensions,
     has_aplus: product.hasAplus,
     categories: product.categories as unknown as Json,
+    bullets: product.bullets ?? [],
+    description: product.description ?? null,
+    aplus_modules: product.aplusModules ?? null,
+    listing_updated_at: product.description || product.bullets?.length ? now : null,
     created_by: userId,
     last_seen_at: now,
     updated_at: now,
@@ -160,6 +165,10 @@ export async function ingestSerp(
       })),
     );
     if (iErr) throw iErr;
+  }
+  if (payload.page === 1) {
+    const anchors = await anchorsForUser(userId);
+    await recordKeywordDailyStats(userId, keywordId, payload, source, anchors).catch((e: unknown) => console.warn('[keyword_daily_stats]', e));
   }
   return { snapshotId: snap.id, items: payload.items.length, keywordId };
 }

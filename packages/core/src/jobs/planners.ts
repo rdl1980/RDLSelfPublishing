@@ -44,6 +44,29 @@ export function nextReverseAsinStep(state: ReverseAsinState, candidates: string[
   return { kind: 'check', keywords: todo.slice(0, 3) };
 }
 
+export type CategoryScanState = {
+  pagesDone: number[];
+  asins: string[];
+  enriched: string[];
+};
+
+export function emptyCategoryScanState(): CategoryScanState {
+  return { pagesDone: [], asins: [], enriched: [] };
+}
+
+/** Prossimo passo di una scansione di categoria: pagine della classifica, poi arricchimento prodotti. */
+export function nextCategoryScanStep(
+  state: CategoryScanState,
+  params: { pages: number; enrich: boolean; maxAsins: number },
+): { kind: 'pages'; pages: number[] } | { kind: 'enrich'; asins: string[] } | { kind: 'done' } {
+  const pending = Array.from({ length: params.pages }, (_, i) => i + 1).filter((p) => !state.pagesDone.includes(p));
+  if (pending.length) return { kind: 'pages', pages: pending.slice(0, SERP_CHUNK_SIZE) };
+  if (!params.enrich) return { kind: 'done' };
+  const todo = state.asins.slice(0, params.maxAsins).filter((a) => !state.enriched.includes(a));
+  if (todo.length) return { kind: 'enrich', asins: todo.slice(0, ENRICH_CHUNK_SIZE) };
+  return { kind: 'done' };
+}
+
 /** Totale fetch stimate per la barra di avanzamento. */
 export function estimateDeepViewTotal(params: { pages: number; enrich: boolean; maxAsins: number }, asinsFound?: number): number {
   const enrich = params.enrich ? Math.min(params.maxAsins, asinsFound ?? params.pages * 48) : 0;

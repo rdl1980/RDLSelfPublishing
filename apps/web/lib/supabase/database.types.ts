@@ -30,6 +30,73 @@ export type Database = {
   };
   public: {
     Tables: {
+      alerts: {
+        Row: {
+          asin: string | null;
+          created_at: string;
+          data: Json;
+          id: number;
+          job_id: string | null;
+          keyword: string | null;
+          kind: string;
+          message: string;
+          read_at: string | null;
+          severity: string;
+          tracked_keyword_id: string | null;
+          user_id: string;
+        };
+        Insert: {
+          asin?: string | null;
+          created_at?: string;
+          data?: Json;
+          id?: never;
+          job_id?: string | null;
+          keyword?: string | null;
+          kind: string;
+          message: string;
+          read_at?: string | null;
+          severity?: string;
+          tracked_keyword_id?: string | null;
+          user_id: string;
+        };
+        Update: {
+          asin?: string | null;
+          created_at?: string;
+          data?: Json;
+          id?: never;
+          job_id?: string | null;
+          keyword?: string | null;
+          kind?: string;
+          message?: string;
+          read_at?: string | null;
+          severity?: string;
+          tracked_keyword_id?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'alerts_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'jobs';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'alerts_tracked_keyword_id_fkey';
+            columns: ['tracked_keyword_id'];
+            isOneToOne: false;
+            referencedRelation: 'tracked_keywords';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'alerts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       api_tokens: {
         Row: {
           created_at: string;
@@ -61,6 +128,120 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'api_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      category_scan_items: {
+        Row: {
+          asin: string;
+          author: string | null;
+          format: string | null;
+          id: number;
+          image_url: string | null;
+          price_cents: number | null;
+          pub_date: string | null;
+          rank: number;
+          rating: number | null;
+          reviews_count: number | null;
+          scan_id: string;
+          title: string | null;
+          user_id: string;
+        };
+        Insert: {
+          asin: string;
+          author?: string | null;
+          format?: string | null;
+          id?: never;
+          image_url?: string | null;
+          price_cents?: number | null;
+          pub_date?: string | null;
+          rank: number;
+          rating?: number | null;
+          reviews_count?: number | null;
+          scan_id: string;
+          title?: string | null;
+          user_id: string;
+        };
+        Update: {
+          asin?: string;
+          author?: string | null;
+          format?: string | null;
+          id?: never;
+          image_url?: string | null;
+          price_cents?: number | null;
+          pub_date?: string | null;
+          rank?: number;
+          rating?: number | null;
+          reviews_count?: number | null;
+          scan_id?: string;
+          title?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'category_scan_items_scan_id_fkey';
+            columns: ['scan_id'];
+            isOneToOne: false;
+            referencedRelation: 'category_scans';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'category_scan_items_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      category_scans: {
+        Row: {
+          category_id: string;
+          category_name: string | null;
+          created_at: string;
+          id: string;
+          job_id: string | null;
+          kind: string;
+          pages: number;
+          summary: Json | null;
+          user_id: string;
+        };
+        Insert: {
+          category_id: string;
+          category_name?: string | null;
+          created_at?: string;
+          id?: string;
+          job_id?: string | null;
+          kind?: string;
+          pages?: number;
+          summary?: Json | null;
+          user_id: string;
+        };
+        Update: {
+          category_id?: string;
+          category_name?: string | null;
+          created_at?: string;
+          id?: string;
+          job_id?: string | null;
+          kind?: string;
+          pages?: number;
+          summary?: Json | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'category_scans_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'jobs';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'category_scans_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
@@ -172,6 +353,72 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'jobs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      keyword_daily_stats: {
+        Row: {
+          alias: string;
+          day: string;
+          id: number;
+          keyword_id: string;
+          median_price_cents: number | null;
+          median_reviews: number | null;
+          new_books_share: number | null;
+          organic_count: number | null;
+          source: string;
+          sponsored_count: number | null;
+          top10_est_monthly_sales: number | null;
+          total_results_est: number | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          alias?: string;
+          day: string;
+          id?: never;
+          keyword_id: string;
+          median_price_cents?: number | null;
+          median_reviews?: number | null;
+          new_books_share?: number | null;
+          organic_count?: number | null;
+          source: string;
+          sponsored_count?: number | null;
+          top10_est_monthly_sales?: number | null;
+          total_results_est?: number | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          alias?: string;
+          day?: string;
+          id?: never;
+          keyword_id?: string;
+          median_price_cents?: number | null;
+          median_reviews?: number | null;
+          new_books_share?: number | null;
+          organic_count?: number | null;
+          source?: string;
+          sponsored_count?: number | null;
+          top10_est_monthly_sales?: number | null;
+          total_results_est?: number | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'keyword_daily_stats_keyword_id_fkey';
+            columns: ['keyword_id'];
+            isOneToOne: false;
+            referencedRelation: 'keywords';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'keyword_daily_stats_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
@@ -503,10 +750,13 @@ export type Database = {
       };
       products: {
         Row: {
+          aplus_modules: number | null;
           asin: string;
           authors: string[];
+          bullets: string[];
           categories: Json;
           created_by: string | null;
+          description: string | null;
           dimensions: string | null;
           first_seen_at: string;
           format: string | null;
@@ -516,6 +766,7 @@ export type Database = {
           isbn13: string | null;
           language: string | null;
           last_seen_at: string;
+          listing_updated_at: string | null;
           marketplace: string;
           page_count: number | null;
           pub_date: string | null;
@@ -525,10 +776,13 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          aplus_modules?: number | null;
           asin: string;
           authors?: string[];
+          bullets?: string[];
           categories?: Json;
           created_by?: string | null;
+          description?: string | null;
           dimensions?: string | null;
           first_seen_at?: string;
           format?: string | null;
@@ -538,6 +792,7 @@ export type Database = {
           isbn13?: string | null;
           language?: string | null;
           last_seen_at?: string;
+          listing_updated_at?: string | null;
           marketplace?: string;
           page_count?: number | null;
           pub_date?: string | null;
@@ -547,10 +802,13 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          aplus_modules?: number | null;
           asin?: string;
           authors?: string[];
+          bullets?: string[];
           categories?: Json;
           created_by?: string | null;
+          description?: string | null;
           dimensions?: string | null;
           first_seen_at?: string;
           format?: string | null;
@@ -560,6 +818,7 @@ export type Database = {
           isbn13?: string | null;
           language?: string | null;
           last_seen_at?: string;
+          listing_updated_at?: string | null;
           marketplace?: string;
           page_count?: number | null;
           pub_date?: string | null;
@@ -648,6 +907,7 @@ export type Database = {
       };
       reverse_asin_results: {
         Row: {
+          asin: string | null;
           checked_at: string;
           found: boolean;
           id: number;
@@ -660,6 +920,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          asin?: string | null;
           checked_at?: string;
           found: boolean;
           id?: never;
@@ -672,6 +933,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          asin?: string | null;
           checked_at?: string;
           found?: boolean;
           id?: never;
@@ -705,6 +967,7 @@ export type Database = {
           asin: string;
           candidates: Json;
           created_at: string;
+          deep_view_id: string | null;
           id: string;
           job_id: string | null;
           user_id: string;
@@ -713,6 +976,7 @@ export type Database = {
           asin: string;
           candidates?: Json;
           created_at?: string;
+          deep_view_id?: string | null;
           id?: string;
           job_id?: string | null;
           user_id: string;
@@ -721,11 +985,19 @@ export type Database = {
           asin?: string;
           candidates?: Json;
           created_at?: string;
+          deep_view_id?: string | null;
           id?: string;
           job_id?: string | null;
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'reverse_asin_runs_deep_view_id_fkey';
+            columns: ['deep_view_id'];
+            isOneToOne: false;
+            referencedRelation: 'deep_views';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'reverse_asin_runs_job_id_fkey';
             columns: ['job_id'];
@@ -986,8 +1258,6 @@ export type Database = {
         };
       };
       requeue_stale_jobs: { Args: { p_user_id: string }; Returns: number };
-      show_limit: { Args: never; Returns: number };
-      show_trgm: { Args: { '': string }; Returns: string[] };
     };
     Enums: {
       job_status: 'pending' | 'running' | 'done' | 'failed' | 'cancelled';
@@ -1002,8 +1272,10 @@ type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>;
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>];
 
 export type Tables<T extends keyof DefaultSchema['Tables']> = DefaultSchema['Tables'][T]['Row'];
-export type TablesInsert<T extends keyof DefaultSchema['Tables']> = DefaultSchema['Tables'][T]['Insert'];
-export type TablesUpdate<T extends keyof DefaultSchema['Tables']> = DefaultSchema['Tables'][T]['Update'];
+export type TablesInsert<T extends keyof DefaultSchema['Tables']> =
+  DefaultSchema['Tables'][T]['Insert'];
+export type TablesUpdate<T extends keyof DefaultSchema['Tables']> =
+  DefaultSchema['Tables'][T]['Update'];
 export type Enums<T extends keyof DefaultSchema['Enums']> = DefaultSchema['Enums'][T];
 
 export const Constants = {

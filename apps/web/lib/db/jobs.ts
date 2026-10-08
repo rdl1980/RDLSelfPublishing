@@ -11,7 +11,10 @@ import {
 } from '@rdl/core';
 import { adminClient } from '@/lib/supabase/admin';
 import type { Json, Tables } from '@/lib/supabase/database.types';
+import { generateAsinAlerts, generateRankAlerts } from './alerts';
+import { computeCategorySummary, ingestCategoryPages } from './categories';
 import { anchorsForUser, ingestProducts, ingestSerp } from './ingest';
+import { updateKeywordDailySales } from './keyword-stats';
 
 export type JobRow = Tables<'jobs'>;
 
@@ -70,7 +73,12 @@ export async function applyProgress(userId: string, job: JobRow, payload: Progre
     serpIds.set(`${s.keyword}|${s.page}`, r.snapshotId);
   }
   if (payload.products.length) {
-    await ingestProducts(userId, payload.products, job.type === 'deep_view' ? 'deep_view' : 'tracker', job.id, anchors);
+    const productSource = job.type === 'deep_view' ? 'deep_view' : job.type === 'category_scan' ? 'category' : 'tracker';
+    await ingestProducts(userId, payload.products, productSource, job.id, anchors);
+  }
+  if (payload.category.length) {
+    const scanId = (job.params as { scanId?: string }).scanId;
+    if (scanId) await ingestCategoryPages(userId, scanId, payload.category);
   }
   if (payload.ranks.length) {
     const { error } = await db.from('keyword_rank_snapshots').insert(
@@ -97,6 +105,7 @@ export async function applyProgress(userId: string, job: JobRow, payload: Progre
           run_id: runId,
           user_id: userId,
           keyword: r.keyword,
+          asin: r.asin ?? (job.params as { asin?: string }).asin ?? null,
           found: r.found,
           page: r.page,
           position: r.position,
@@ -124,15 +133,37 @@ export async function completeJob(userId: string, job: JobRow, result: Record<st
     const summary = await computeDeepViewSummary(userId, job);
     finalResult = { ...result, summary };
     const deepViewId = (job.params as { deepViewId?: string }).deepViewId;
-    if (deepViewId) await db.from('deep_views').update({ summary: summary as unknown as Json }).eq('id', deepViewId);
+    if (deepViewId) {
+      await db.from('deep_views').update({ summary: summary as unknown as Json }).eq('id', deepViewId);
+      const { data: dv } = await db.from('deep_views').select('keyword_id, alias').eq('id', deepViewId).maybeSingle();
+      if (dv) await updateKeywordDailySales(userId, dv.keyword_id, dv.alias, now.slice(0, 10), summary.estMonthlySalesTop10).catch(() => undefined);
+    }
+  }
+  if (job.type === 'category_scan') {
+    const scanId = (job.params as { scanId?: string }).scanId;
+    if (scanId) {
+      const summary = await computeCategorySummary(userId, scanId, job.id);
+      finalResult = { ...result, summary };
+    }
   }
   if (job.type === 'track_keyword') {
     const id = (job.params as { trackedKeywordId?: string }).trackedKeywordId;
     if (id) await db.from('tracked_keywords').update({ last_run_at: now }).eq('id', id);
+    // Gli avvisi non devono mai far fallire il completamento del job
+    const alerts = await generateRankAlerts(userId, job).catch((e: unknown) => {
+      console.warn('[alerts] track_keyword', e);
+      return 0;
+    });
+    finalResult = { ...finalResult, alerts };
   }
   if (job.type === 'track_asins') {
     const ids = (job.params as { trackedAsinIds?: string[] }).trackedAsinIds ?? [];
     if (ids.length) await db.from('tracked_asins').update({ last_run_at: now }).in('id', ids);
+    const alerts = await generateAsinAlerts(userId, job).catch((e: unknown) => {
+      console.warn('[alerts] track_asins', e);
+      return 0;
+    });
+    finalResult = { ...finalResult, alerts };
   }
 
   await db

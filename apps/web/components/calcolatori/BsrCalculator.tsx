@@ -97,7 +97,8 @@ export function BsrCalculator({ initialSettings }: { initialSettings: ProfileSet
         <h3 className="mb-2 text-sm font-semibold">Calibrazione</h3>
         <p className="mb-3 text-sm text-slate-600">
           Le ancore di riferimento sono quelle di amazon.com (es. BSR 1.000 ≈ {BSR_ANCHORS_US.books[3]!.dailySales} copie/giorno) moltiplicate per il
-          fattore di mercato italiano. Se conosci le vendite reali di un tuo libro a un certo BSR, regola il fattore finché la stima coincide.
+          fattore di mercato italiano. Qui lo regoli a mano; per stimarlo dai tuoi report KDP usa la{' '}
+          <a href="/impostazioni" className="underline">calibrazione nelle Impostazioni</a>.
         </p>
         <div className="flex flex-wrap items-end gap-3">
           <div>

@@ -36,6 +36,7 @@ function describe(j: JobLite): string {
   if (j.type === 'reverse_asin') return `${p.asin} · ${(p.candidates as string[] | undefined)?.length ?? 0} keyword`;
   if (j.type === 'track_keyword') return `«${p.keyword}»`;
   if (j.type === 'track_asins') return `${(p.asins as string[] | undefined)?.length ?? 0} ASIN`;
+  if (j.type === 'category_scan') return `categoria ${p.categoryId} · ${p.kind === 'new_releases' ? 'nuove uscite' : 'best seller'} · ${p.pages} pag.`;
   return '';
 }
 

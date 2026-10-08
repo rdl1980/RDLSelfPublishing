@@ -3,7 +3,7 @@ import type { CachedProduct } from './cache';
 import type { ExtSettings } from './settings';
 
 export type ConnectionStatus =
-  | { connected: true; email: string | null; plan: string }
+  | { connected: true; email: string | null; plan: string; unreadAlerts?: number }
   | { connected: false; error: string };
 
 export interface StatusReply {

@@ -4,13 +4,14 @@ import { PageTitle } from '@/components/ui';
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const [{ count: sessions }, { count: niches }, { count: trackedKw }, { count: trackedAsins }, { data: recent }] =
+  const [{ count: sessions }, { count: niches }, { count: trackedKw }, { count: trackedAsins }, { data: recent }, { data: alerts }] =
     await Promise.all([
       supabase.from('research_sessions').select('id', { count: 'exact', head: true }),
       supabase.from('niches').select('id', { count: 'exact', head: true }),
       supabase.from('tracked_keywords').select('id', { count: 'exact', head: true }).eq('active', true),
       supabase.from('tracked_asins').select('id', { count: 'exact', head: true }).eq('active', true),
       supabase.from('research_sessions').select('id, name, seed, created_at, stats').order('created_at', { ascending: false }).limit(5),
+      supabase.from('alerts').select('id, message, severity, created_at, read_at').order('created_at', { ascending: false }).limit(5),
     ]);
 
   const cards = [
@@ -31,6 +32,24 @@ export default async function HomePage() {
           </Link>
         ))}
       </div>
+      <h2 className="mt-8 mb-3 text-lg font-semibold">Ultimi avvisi</h2>
+      {alerts && alerts.length > 0 ? (
+        <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+          {alerts.map((a) => (
+            <li key={a.id} className={`px-4 py-2 text-sm ${a.read_at ? 'text-slate-500' : ''}`}>
+              <span className={`mr-2 inline-block h-2 w-2 rounded-full ${a.severity === 'warn' ? 'bg-red-500' : a.severity === 'good' ? 'bg-green-500' : 'bg-slate-400'}`} />
+              {a.message} <span className="text-xs text-slate-400">{new Date(a.created_at).toLocaleDateString('it-IT')}</span>
+            </li>
+          ))}
+          <li className="px-4 py-2 text-xs">
+            <Link href="/avvisi" className="underline">
+              tutti gli avvisi
+            </Link>
+          </li>
+        </ul>
+      ) : (
+        <p className="text-sm text-slate-500">Nessun avviso: compaiono dopo il secondo giorno di tracking.</p>
+      )}
       <h2 className="mt-8 mb-3 text-lg font-semibold">Ultime ricerche keyword</h2>
       {recent && recent.length > 0 ? (
         <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">

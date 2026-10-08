@@ -13,6 +13,8 @@ export * from './parsers/captcha';
 export * from './parsers/bsr';
 export * from './parsers/search-page';
 export * from './parsers/product-page';
+export * from './parsers/listing';
+export * from './parsers/category-page';
 
 export * from './config/bsr-anchors.it';
 export * from './config/kdp-print-costs.eu';
@@ -22,11 +24,17 @@ export * from './config/expansion.it';
 export * from './models/bsr-sales';
 export * from './models/royalty';
 export * from './models/niche-score';
+export * from './models/calibration';
+export * from './models/alerts';
+export * from './models/listing';
+export * from './models/pricing';
 
 export * from './keywords/normalize';
 export * from './keywords/expansion';
 export * from './keywords/autocomplete';
 export * from './keywords/ngrams';
+export * from './keywords/pool';
+export * from './keywords/kdp-backend';
 
 export * from './jobs/protocol';
 export * from './jobs/planners';

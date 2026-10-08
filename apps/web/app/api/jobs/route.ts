@@ -22,6 +22,23 @@ export async function POST(req: Request) {
       const pages = Number(params.pages ?? 2);
       const { ensureKeywordAdmin } = await import('@/lib/db/ingest');
       const keywordId = await ensureKeywordAdmin(user.id, keyword);
+      // Deduplica: stessa keyword, catalogo e pagine nelle ultime 6 ore → si riusa l'analisi (in corso o appena finita)
+      const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+      const { data: recent } = await db
+        .from('deep_views')
+        .select('id, job_id, job:jobs(status)')
+        .eq('user_id', user.id)
+        .eq('keyword_id', keywordId)
+        .eq('alias', alias)
+        .eq('pages', pages)
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const recentStatus = (recent?.job as unknown as { status: string } | null)?.status;
+      if (recent?.job_id && recentStatus && ['pending', 'running', 'done'].includes(recentStatus)) {
+        return NextResponse.json({ jobId: recent.job_id, deepViewId: recent.id, reused: true });
+      }
       const { data: dv, error } = await db.from('deep_views').insert({ user_id: user.id, keyword_id: keywordId, alias, pages }).select('id').single();
       if (error) throw error;
       const job = await createJob(user.id, type, { ...params, deepViewId: dv.id }, { priority: priority ?? 5 });
@@ -38,6 +55,20 @@ export async function POST(req: Request) {
       const job = await createJob(user.id, type, { ...params, runId: run.id }, { priority: priority ?? 5 });
       await db.from('reverse_asin_runs').update({ job_id: job.id }).eq('id', run.id);
       return NextResponse.json({ jobId: job.id, runId: run.id });
+    }
+    if (type === 'category_scan') {
+      const categoryId = String(params.categoryId ?? '');
+      const kind = params.kind === 'new_releases' ? 'new_releases' : 'bestsellers';
+      const pages = Number(params.pages ?? 1);
+      const { data: scan, error } = await db
+        .from('category_scans')
+        .insert({ user_id: user.id, category_id: categoryId, kind, pages, category_name: typeof params.categoryName === 'string' ? params.categoryName : null })
+        .select('id')
+        .single();
+      if (error) throw error;
+      const job = await createJob(user.id, type, { ...params, scanId: scan.id }, { priority: priority ?? 4 });
+      await db.from('category_scans').update({ job_id: job.id }).eq('id', scan.id);
+      return NextResponse.json({ jobId: job.id, scanId: scan.id });
     }
     const job = await createJob(user.id, type as JobType, params, { priority });
     return NextResponse.json({ jobId: job.id });

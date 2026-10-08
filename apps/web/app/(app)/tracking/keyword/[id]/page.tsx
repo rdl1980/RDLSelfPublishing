@@ -1,6 +1,7 @@
 import { buildSearchUrl, type SearchAlias } from '@rdl/core';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { KeywordTrendChart, type KeywordTrendPoint } from '@/components/tracking/charts/KeywordTrendChart';
 import { RankChart, type RankPoint } from '@/components/tracking/charts/RankChart';
 import { Badge, Card, PageTitle } from '@/components/ui';
 import { createClient } from '@/lib/supabase/server';
@@ -14,6 +15,24 @@ export default async function TrackedKeywordPage({ params }: PageProps<'/trackin
   ]);
   if (!tk) notFound();
   const keyword = (tk.keyword as unknown as { text: string } | null)?.text ?? '';
+  const sinceDate = new Date();
+  sinceDate.setDate(sinceDate.getDate() - 366);
+  const since = sinceDate.toISOString().slice(0, 10);
+  const { data: stats } = await supabase
+    .from('keyword_daily_stats')
+    .select('day, total_results_est, top10_est_monthly_sales, median_price_cents, median_reviews, new_books_share')
+    .eq('keyword_id', tk.keyword_id)
+    .eq('alias', tk.alias)
+    .gte('day', since)
+    .order('day');
+  const trend: KeywordTrendPoint[] = (stats ?? []).map((s) => ({
+    date: s.day.slice(5),
+    results: s.total_results_est,
+    sales: s.top10_est_monthly_sales,
+    price: s.median_price_cents,
+    reviews: s.median_reviews,
+    newShare: s.new_books_share,
+  }));
   const asins = tk.watch_asins;
   const { data: products } = asins.length ? await supabase.from('products').select('asin, title').in('asin', asins) : { data: [] };
   const titleOf = new Map((products ?? []).map((p) => [p.asin, p.title]));
@@ -39,6 +58,14 @@ export default async function TrackedKeywordPage({ params }: PageProps<'/trackin
         </a>{' '}
         · {tk.pages} pagine · ultimo run {tk.last_run_at ? new Date(tk.last_run_at).toLocaleString('it-IT') : 'mai'}
       </p>
+      <h3 className="mb-2 text-sm font-semibold">Stagionalità ({trend.length} giorni di rilevazioni negli ultimi 12 mesi)</h3>
+      {trend.length ? (
+        <div className="mb-6">
+          <KeywordTrendChart data={trend} />
+        </div>
+      ) : (
+        <p className="mb-6 text-sm text-slate-400">Le rilevazioni giornaliere compaiono dopo il primo tracking (o il primo Deep View) di questa keyword.</p>
+      )}
       {asins.length === 0 && <Card>Aggiungi gli ASIN da osservare dalla lista delle keyword tracciate.</Card>}
       {asins.length > 0 && (
         <>

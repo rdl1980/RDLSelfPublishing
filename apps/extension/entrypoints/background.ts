@@ -14,7 +14,7 @@ let configCache: { at: number; value: ConfigReply } | null = null;
 async function testConnection(): Promise<ConnectionStatus> {
   try {
     const me = await api.me();
-    return { connected: true, email: me.email, plan: me.plan };
+    return { connected: true, email: me.email, plan: me.plan, unreadAlerts: me.unreadAlerts ?? 0 };
   } catch (e) {
     const error = e instanceof ApiError ? `${e.status}: ${e.message}` : String(e);
     return { connected: false, error };

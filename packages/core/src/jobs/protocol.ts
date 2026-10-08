@@ -48,6 +48,9 @@ export const ProductSchema = z.object({
   dimensions: z.string().nullable(),
   hasAplus: z.boolean(),
   categories: z.array(z.object({ id: z.string().nullable(), name: z.string() })),
+  bullets: z.array(z.string()).default([]),
+  description: z.string().nullable().default(null),
+  aplusModules: z.number().int().nullable().default(null),
 });
 
 export const ProductSnapshotInputSchema = z.object({
@@ -96,6 +99,8 @@ export const ReverseAsinParamsSchema = z.object({
   alias: SearchAliasSchema.default('stripbooks'),
   pages: z.number().int().min(1).max(5).default(3),
   runId: z.string().uuid().optional(),
+  /** Altri ASIN da cercare nelle stesse pagine (Reverse ASIN in massa): una ricerca per keyword serve tutti. */
+  asins: z.array(AsinSchema).max(25).optional(),
 });
 export const EnrichAsinsParamsSchema = z.object({
   asins: z.array(AsinSchema).min(1).max(200),
@@ -113,13 +118,23 @@ export const TrackAsinsParamsSchema = z.object({
   asins: z.array(AsinSchema).min(1).max(50),
 });
 
+export const CategoryScanParamsSchema = z.object({
+  categoryId: z.string().regex(/^\d{3,}$/),
+  store: z.enum(['books', 'digital-text']).default('books'),
+  kind: z.enum(['bestsellers', 'new_releases']).default('bestsellers'),
+  pages: z.number().int().min(1).max(2).default(1),
+  enrich: z.boolean().default(true),
+  maxAsins: z.number().int().min(1).max(100).default(50),
+  scanId: z.string().uuid().optional(),
+});
+
 export const JobParamsSchemas = {
   deep_view: DeepViewParamsSchema,
   reverse_asin: ReverseAsinParamsSchema,
   enrich_asins: EnrichAsinsParamsSchema,
   track_keyword: TrackKeywordParamsSchema,
   track_asins: TrackAsinsParamsSchema,
-  category_scan: z.object({ categoryId: z.string() }),
+  category_scan: CategoryScanParamsSchema,
   ai_reserved: z.object({}).passthrough(),
 } as const;
 
@@ -128,6 +143,7 @@ export type ReverseAsinParams = z.infer<typeof ReverseAsinParamsSchema>;
 export type EnrichAsinsParams = z.infer<typeof EnrichAsinsParamsSchema>;
 export type TrackKeywordParams = z.infer<typeof TrackKeywordParamsSchema>;
 export type TrackAsinsParams = z.infer<typeof TrackAsinsParamsSchema>;
+export type CategoryScanParams = z.infer<typeof CategoryScanParamsSchema>;
 
 export const JobProgressSchema = z.object({
   done: z.number().int().nonnegative().default(0),
@@ -162,12 +178,36 @@ export const RankResultSchema = z.object({
 });
 export const ReverseResultSchema = z.object({
   keyword: z.string(),
+  /** ASIN a cui si riferisce il risultato (assente = l'ASIN principale del run). */
+  asin: AsinSchema.optional(),
   found: z.boolean(),
   page: z.number().int().nullable(),
   position: z.number().int().nullable(),
   organicPosition: z.number().int().nullable(),
   totalResultsEst: z.number().int().nullable(),
 });
+
+export const CategoryItemSchema = z.object({
+  asin: AsinSchema,
+  rank: z.number().int().positive(),
+  title: z.string().nullable(),
+  author: z.string().nullable(),
+  format: ProductFormatSchema.nullable(),
+  priceCents: z.number().int().nullable(),
+  rating: z.number().nullable(),
+  reviewsCount: z.number().int().nullable(),
+  imageUrl: z.string().nullable(),
+  url: z.string().nullable(),
+});
+export const CategoryPagePayloadSchema = z.object({
+  categoryId: z.string(),
+  categoryName: z.string().nullable(),
+  kind: z.enum(['bestsellers', 'new_releases']),
+  page: z.number().int().positive(),
+  capturedAt: z.string(),
+  items: z.array(CategoryItemSchema),
+});
+export type CategoryPagePayload = z.infer<typeof CategoryPagePayloadSchema>;
 
 /** Payload parziale e idempotente inviato a ogni chunk (vale anche da heartbeat). */
 export const ProgressPayloadSchema = z.object({
@@ -176,6 +216,7 @@ export const ProgressPayloadSchema = z.object({
   products: z.array(ProductPayloadSchema).default([]),
   ranks: z.array(RankResultSchema).default([]),
   reverse: z.array(ReverseResultSchema).default([]),
+  category: z.array(CategoryPagePayloadSchema).default([]),
 });
 export type ProgressPayload = z.infer<typeof ProgressPayloadSchema>;
 

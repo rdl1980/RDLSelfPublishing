@@ -11,6 +11,7 @@ import {
 import { anchorsFromSettings, parseProfileSettings } from '@/lib/settings';
 import { adminClient } from '@/lib/supabase/admin';
 import type { Json } from '@/lib/supabase/database.types';
+import { recordKeywordDailyStats } from './keyword-stats';
 
 export type SnapshotSource = 'quick_view' | 'product_page' | 'deep_view' | 'tracker' | 'manual';
 export type SerpSource = 'quick_view' | 'deep_view' | 'tracker' | 'reverse_asin';
@@ -160,6 +161,10 @@ export async function ingestSerp(
       })),
     );
     if (iErr) throw iErr;
+  }
+  if (payload.page === 1) {
+    const anchors = await anchorsForUser(userId);
+    await recordKeywordDailyStats(userId, keywordId, payload, source, anchors).catch((e: unknown) => console.warn('[keyword_daily_stats]', e));
   }
   return { snapshotId: snap.id, items: payload.items.length, keywordId };
 }

@@ -13,6 +13,7 @@ import { adminClient } from '@/lib/supabase/admin';
 import type { Json, Tables } from '@/lib/supabase/database.types';
 import { generateAsinAlerts, generateRankAlerts } from './alerts';
 import { anchorsForUser, ingestProducts, ingestSerp } from './ingest';
+import { updateKeywordDailySales } from './keyword-stats';
 
 export type JobRow = Tables<'jobs'>;
 
@@ -126,7 +127,11 @@ export async function completeJob(userId: string, job: JobRow, result: Record<st
     const summary = await computeDeepViewSummary(userId, job);
     finalResult = { ...result, summary };
     const deepViewId = (job.params as { deepViewId?: string }).deepViewId;
-    if (deepViewId) await db.from('deep_views').update({ summary: summary as unknown as Json }).eq('id', deepViewId);
+    if (deepViewId) {
+      await db.from('deep_views').update({ summary: summary as unknown as Json }).eq('id', deepViewId);
+      const { data: dv } = await db.from('deep_views').select('keyword_id, alias').eq('id', deepViewId).maybeSingle();
+      if (dv) await updateKeywordDailySales(userId, dv.keyword_id, dv.alias, now.slice(0, 10), summary.estMonthlySalesTop10).catch(() => undefined);
+    }
   }
   if (job.type === 'track_keyword') {
     const id = (job.params as { trackedKeywordId?: string }).trackedKeywordId;

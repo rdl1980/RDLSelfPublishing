@@ -4,6 +4,7 @@ import { buildSearchUrl, formatIt, toCsv, type SearchAlias } from '@rdl/core';
 import { useMemo, useState } from 'react';
 import { Badge, Button, Input } from '@/components/ui';
 import { downloadText } from '@/lib/download';
+import { KdpKeywordsPanel } from '@/components/keyword/KdpKeywordsPanel';
 
 export interface CompetitorKeywordRow {
   keyword: string;
@@ -30,6 +31,7 @@ export function CompetitorKeywordsTable({
   const [filter, setFilter] = useState('');
   const [onlyFound, setOnlyFound] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showKdp, setShowKdp] = useState(false);
 
   const visible = useMemo(() => {
     const f = filter.trim().toLowerCase();
@@ -98,8 +100,19 @@ export function CompetitorKeywordsTable({
           <Button variant="secondary" onClick={exportCsv} disabled={!rows.length}>
             Esporta CSV
           </Button>
+          <Button variant="secondary" onClick={() => setShowKdp((v) => !v)} disabled={!rows.length}>
+            {showKdp ? 'Nascondi campi KDP' : '7 campi KDP'}
+          </Button>
         </div>
       </div>
+      {showKdp && (
+        <KdpKeywordsPanel
+          candidates={chosen().map((r) => ({
+            phrase: r.keyword,
+            weight: r.found * 10 + r.organicFound + (r.bestPosition ? Math.max(0, 48 - r.bestPosition) / 48 : 0) + (selected.has(r.keyword) ? 50 : 0),
+          }))}
+        />
+      )}
       <div className="overflow-auto rounded-lg border border-slate-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">

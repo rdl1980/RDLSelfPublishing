@@ -34,6 +34,7 @@ export * from './keywords/expansion';
 export * from './keywords/autocomplete';
 export * from './keywords/ngrams';
 export * from './keywords/pool';
+export * from './keywords/kdp-backend';
 
 export * from './jobs/protocol';
 export * from './jobs/planners';

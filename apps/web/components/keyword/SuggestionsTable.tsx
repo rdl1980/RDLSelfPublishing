@@ -7,6 +7,7 @@ import { downloadText, safeFilename } from '@/lib/download';
 import { addKeywordToNiche, trackKeyword } from '@/lib/keywords';
 import { useUser } from '@/lib/use-user';
 import { Alert, Button, Input, Select } from '@/components/ui';
+import { KdpKeywordsPanel } from './KdpKeywordsPanel';
 
 export interface SuggestionRow {
   value: string;
@@ -40,6 +41,7 @@ export function SuggestionsTable({
   const [nicheId, setNicheId] = useState(niches[0]?.id ?? '');
   const [msg, setMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showKdp, setShowKdp] = useState(false);
 
   const visible = useMemo(() => {
     const f = filter.trim().toLowerCase();
@@ -130,8 +132,16 @@ export function SuggestionsTable({
           <Button variant="secondary" onClick={toNiche} disabled={busy || !rows.length || !nicheId || !user}>
             Aggiungi a nicchia
           </Button>
+          <Button variant="secondary" onClick={() => setShowKdp((v) => !v)} disabled={!rows.length}>
+            {showKdp ? 'Nascondi campi KDP' : '7 campi KDP'}
+          </Button>
         </div>
       </div>
+      {showKdp && (
+        <KdpKeywordsPanel
+          candidates={chosen().map((r) => ({ phrase: r.value, weight: 1 / Math.max(1, r.position) + (selected.has(r.normalized) ? 1 : 0) }))}
+        />
+      )}
       {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
       <p className="text-xs text-slate-500">Le azioni si applicano alle righe selezionate, oppure a tutte quelle visibili se non ne hai selezionata nessuna.</p>
       <div className="overflow-auto rounded-lg border border-slate-200 bg-white">

@@ -41,6 +41,7 @@ export interface MeResponse {
   userId: string;
   email: string | null;
   plan: string;
+  unreadAlerts?: number;
 }
 
 export const api = {

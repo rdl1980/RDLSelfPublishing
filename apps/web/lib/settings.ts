@@ -1,4 +1,11 @@
-import { resolveAnchors, SCORE_WEIGHTS, type BsrOverrides, type CalibrationPoint, type ScoreWeights } from '@rdl/core';
+import {
+  resolveAnchors,
+  SCORE_WEIGHTS,
+  type AlertThresholds,
+  type BsrOverrides,
+  type CalibrationPoint,
+  type ScoreWeights,
+} from '@rdl/core';
 import type { Json } from './supabase/database.types';
 
 /** Struttura di profiles.settings (jsonb). Tutti i campi sono opzionali. */
@@ -7,6 +14,8 @@ export interface ProfileSettings {
   score?: Partial<ScoreWeights>;
   /** Punti osservati (BSR, copie/giorno) dai report KDP, usati per stimare il fattore di mercato. */
   calibration?: CalibrationPoint[];
+  /** Soglie degli avvisi di tracking. */
+  alerts?: Partial<AlertThresholds>;
 }
 
 export function parseProfileSettings(raw: Json | null | undefined): ProfileSettings {

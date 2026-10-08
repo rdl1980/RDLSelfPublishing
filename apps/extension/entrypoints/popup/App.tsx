@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { sendMessage, type StatusReply } from '@/lib/messages';
+import { getSettings } from '@/lib/settings';
 
 export function App() {
   const [status, setStatus] = useState<StatusReply | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [webUrl, setWebUrl] = useState('');
 
   const refresh = () => sendMessage({ type: 'status:get' }).then(setStatus, (e) => setError(String(e)));
   useEffect(() => {
+    void getSettings().then((s) => setWebUrl(s.apiUrl.replace(/\/$/, '')));
     void refresh();
     const id = setInterval(() => void refresh(), 4000);
     return () => clearInterval(id);
@@ -49,6 +52,11 @@ export function App() {
             <p className="rounded bg-green-50 px-2 py-1 text-green-700">Connesso{status.connection.email ? ` come ${status.connection.email}` : ''}</p>
           ) : (
             <p className="rounded bg-red-50 px-2 py-1 text-red-700">Non connesso: {status.connection.error}</p>
+          )}
+          {status.connection.connected && (status.connection.unreadAlerts ?? 0) > 0 && (
+            <a href={`${webUrl}/avvisi`} target="_blank" rel="noreferrer" className="block rounded bg-amber-50 px-2 py-1 text-amber-800 hover:underline">
+              {status.connection.unreadAlerts} {status.connection.unreadAlerts === 1 ? 'avviso non letto' : 'avvisi non letti'} ↗
+            </a>
           )}
           {status.pausedUntil && (
             <p className="rounded bg-amber-50 px-2 py-1 text-amber-800">In pausa fino alle {new Date(status.pausedUntil).toLocaleTimeString('it-IT')}</p>

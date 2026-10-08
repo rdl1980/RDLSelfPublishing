@@ -11,6 +11,7 @@ import {
 } from '@rdl/core';
 import { adminClient } from '@/lib/supabase/admin';
 import type { Json, Tables } from '@/lib/supabase/database.types';
+import { generateAsinAlerts, generateRankAlerts } from './alerts';
 import { anchorsForUser, ingestProducts, ingestSerp } from './ingest';
 
 export type JobRow = Tables<'jobs'>;
@@ -130,10 +131,21 @@ export async function completeJob(userId: string, job: JobRow, result: Record<st
   if (job.type === 'track_keyword') {
     const id = (job.params as { trackedKeywordId?: string }).trackedKeywordId;
     if (id) await db.from('tracked_keywords').update({ last_run_at: now }).eq('id', id);
+    // Gli avvisi non devono mai far fallire il completamento del job
+    const alerts = await generateRankAlerts(userId, job).catch((e: unknown) => {
+      console.warn('[alerts] track_keyword', e);
+      return 0;
+    });
+    finalResult = { ...finalResult, alerts };
   }
   if (job.type === 'track_asins') {
     const ids = (job.params as { trackedAsinIds?: string[] }).trackedAsinIds ?? [];
     if (ids.length) await db.from('tracked_asins').update({ last_run_at: now }).in('id', ids);
+    const alerts = await generateAsinAlerts(userId, job).catch((e: unknown) => {
+      console.warn('[alerts] track_asins', e);
+      return 0;
+    });
+    finalResult = { ...finalResult, alerts };
   }
 
   await db

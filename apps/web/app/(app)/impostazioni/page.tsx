@@ -1,3 +1,4 @@
+import { AlertThresholdsPanel } from '@/components/impostazioni/AlertThresholdsPanel';
 import { BsrCalibrationPanel } from '@/components/impostazioni/BsrCalibrationPanel';
 import { TokensPanel } from '@/components/impostazioni/TokensPanel';
 import { Card, PageTitle } from '@/components/ui';
@@ -25,6 +26,7 @@ export default async function SettingsPage() {
         </Card>
         <TokensPanel tokens={tokens ?? []} />
         <BsrCalibrationPanel initialSettings={settings} />
+        <AlertThresholdsPanel initialSettings={settings} />
         <Card>
           <h2 className="mb-1 text-base font-semibold">Parametri di stima</h2>
           <p className="text-sm text-slate-600">

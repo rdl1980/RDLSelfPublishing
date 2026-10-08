@@ -23,6 +23,7 @@ export * from './models/bsr-sales';
 export * from './models/royalty';
 export * from './models/niche-score';
 export * from './models/calibration';
+export * from './models/alerts';
 
 export * from './keywords/normalize';
 export * from './keywords/expansion';

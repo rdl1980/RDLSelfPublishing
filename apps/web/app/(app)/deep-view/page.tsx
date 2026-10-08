@@ -14,7 +14,15 @@ export default async function DeepViewPage({ searchParams }: PageProps<'/deep-vi
 
   return (
     <>
-      <PageTitle>Deep View</PageTitle>
+      <PageTitle
+        actions={
+          <Link href="/deep-view/confronto" className="text-sm underline">
+            Confronta le nicchie →
+          </Link>
+        }
+      >
+        Deep View
+      </PageTitle>
       <p className="mb-4 text-sm text-slate-600">
         Analizza i primi 50-100 risultati di una keyword su amazon.it: BSR, vendite stimate, pagine, editore, età e punteggio di nicchia. Il lavoro viene eseguito
         dall&apos;estensione Chrome nel tuo browser.

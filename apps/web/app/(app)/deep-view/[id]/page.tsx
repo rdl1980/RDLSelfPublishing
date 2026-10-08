@@ -1,5 +1,7 @@
 import { estimateMonthlySales, type NicheSummary } from '@rdl/core';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { BulkReverseButton } from '@/components/deep-view/BulkReverseButton';
 import { DeepViewTable, type DeepViewRow } from '@/components/deep-view/DeepViewTable';
 import { JobWatcher } from '@/components/jobs/JobWatcher';
 import { NicheSummaryCard } from '@/components/deep-view/NicheSummaryCard';
@@ -55,10 +57,28 @@ export default async function DeepViewDetail({ params }: PageProps<'/deep-view/[
 
   return (
     <>
-      <PageTitle>Deep View: «{keyword}»</PageTitle>
+      <PageTitle
+        actions={
+          <span className="flex gap-3 text-sm">
+            <Link href={`/deep-view/${dv.id}/keyword`} className="underline">
+              keyword dei concorrenti
+            </Link>
+            <Link href="/deep-view/confronto" className="underline">
+              confronto nicchie
+            </Link>
+          </span>
+        }
+      >
+        Deep View: «{keyword}»
+      </PageTitle>
       <p className="mb-3 text-sm text-slate-500">
         {dv.alias} · {dv.pages} pagine · {new Date(dv.created_at).toLocaleString('it-IT')}
       </p>
+      {job?.status === 'done' && rows.length >= 2 && (
+        <div className="mb-3">
+          <BulkReverseButton deepViewId={dv.id} />
+        </div>
+      )}
       {job && <JobWatcher jobId={job.id} initialStatus={job.status} />}
       {dv.summary && <NicheSummaryCard summary={dv.summary as unknown as NicheSummary} />}
       <div className="mt-4">

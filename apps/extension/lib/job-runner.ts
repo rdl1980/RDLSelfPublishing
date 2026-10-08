@@ -32,7 +32,7 @@ export interface ChunkResult {
     serp: SerpPayload[];
     products: ProductPayload[];
     ranks: { trackedKeywordId: string; asin: string; found: boolean; page: number | null; position: number | null; organicPosition: number | null; isSponsored: boolean | null }[];
-    reverse: { keyword: string; found: boolean; page: number | null; position: number | null; organicPosition: number | null; totalResultsEst: number | null }[];
+    reverse: { keyword: string; asin?: string; found: boolean; page: number | null; position: number | null; organicPosition: number | null; totalResultsEst: number | null }[];
   };
 }
 export interface ChunkError {
@@ -153,24 +153,29 @@ async function runReverseAsin(job: Job, _settings: ExtSettings): Promise<ChunkRe
   const step = nextReverseAsinStep(state, params.candidates);
   if (step.kind === 'done') return { ok: true, done: true, state, progress: { done: params.candidates.length, total: params.candidates.length, step: 'done' }, payload };
 
+  // Una sola ricerca per keyword serve tutti gli ASIN osservati (l'ASIN principale più gli eventuali extra)
+  const watched = Array.from(new Set([params.asin, ...(params.asins ?? [])]));
   for (const keyword of step.keywords) {
-    let result: ChunkResult['payload']['reverse'][number] = { keyword, found: false, page: null, position: null, organicPosition: null, totalResultsEst: null };
+    const results = new Map<string, ChunkResult['payload']['reverse'][number]>();
+    for (const asin of watched) results.set(asin, { keyword, asin, found: false, page: null, position: null, organicPosition: null, totalResultsEst: null });
     for (let page = 1; page <= params.pages; page++) {
       const serp = await fetchSerp(keyword, params.alias, page);
-      if (page === 1) result.totalResultsEst = serp.totalResultsEst;
-      const hit = serp.items.find((i) => i.asin === params.asin);
-      if (hit) {
-        result = { keyword, found: true, page, position: hit.position, organicPosition: hit.organicPosition, totalResultsEst: result.totalResultsEst };
-        break;
+      if (page === 1) for (const r of results.values()) r.totalResultsEst = serp.totalResultsEst;
+      for (const asin of watched) {
+        const r = results.get(asin)!;
+        if (r.found) continue;
+        const hit = serp.items.find((i) => i.asin === asin);
+        if (hit) results.set(asin, { ...r, found: true, page, position: hit.position, organicPosition: hit.organicPosition });
       }
+      if ([...results.values()].every((r) => r.found)) break;
       if (serp.items.length < 10) break; // ultima pagina
       await new Promise((r) => setTimeout(r, 400 + Math.random() * 600));
     }
-    payload.reverse.push(result);
+    payload.reverse.push(...results.values());
     state.checked.push(keyword);
   }
   const done = nextReverseAsinStep(state, params.candidates).kind === 'done';
-  return { ok: true, done, state, progress: { done: state.checked.length, total: params.candidates.length, step: 'check', message: `${payload.reverse.filter((r) => r.found).length} trovate in questo blocco` }, payload };
+  return { ok: true, done, state, progress: { done: state.checked.length, total: params.candidates.length, step: 'check', message: `${new Set(payload.reverse.filter((r) => r.found).map((r) => r.keyword)).size} keyword trovate in questo blocco` }, payload };
 }
 
 async function runTrackKeyword(job: Job, settings: ExtSettings): Promise<ChunkResult> {

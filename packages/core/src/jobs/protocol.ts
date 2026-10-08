@@ -96,6 +96,8 @@ export const ReverseAsinParamsSchema = z.object({
   alias: SearchAliasSchema.default('stripbooks'),
   pages: z.number().int().min(1).max(5).default(3),
   runId: z.string().uuid().optional(),
+  /** Altri ASIN da cercare nelle stesse pagine (Reverse ASIN in massa): una ricerca per keyword serve tutti. */
+  asins: z.array(AsinSchema).max(25).optional(),
 });
 export const EnrichAsinsParamsSchema = z.object({
   asins: z.array(AsinSchema).min(1).max(200),
@@ -162,6 +164,8 @@ export const RankResultSchema = z.object({
 });
 export const ReverseResultSchema = z.object({
   keyword: z.string(),
+  /** ASIN a cui si riferisce il risultato (assente = l'ASIN principale del run). */
+  asin: AsinSchema.optional(),
   found: z.boolean(),
   page: z.number().int().nullable(),
   position: z.number().int().nullable(),

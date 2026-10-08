@@ -8,7 +8,7 @@ export default async function ReverseAsinDetail({ params }: PageProps<'/reverse-
   const { id } = await params;
   const supabase = await createClient();
   const [{ data: run }, { data: results }] = await Promise.all([
-    supabase.from('reverse_asin_runs').select('*, job:jobs(id, status)').eq('id', id).maybeSingle(),
+    supabase.from('reverse_asin_runs').select('*, job:jobs(id, status, params)').eq('id', id).maybeSingle(),
     supabase.from('reverse_asin_results').select('*').eq('run_id', id).order('found', { ascending: false }).order('page').order('position'),
   ]);
   if (!run) notFound();
@@ -17,6 +17,8 @@ export default async function ReverseAsinDetail({ params }: PageProps<'/reverse-
   const candidates = run.candidates as string[];
   const checked = new Set((results ?? []).map((r) => r.keyword));
   const found = (results ?? []).filter((r) => r.found);
+  const multi = new Set((results ?? []).map((r) => r.asin).filter(Boolean)).size > 1;
+  const pages = Number((run.job as unknown as { params?: { pages?: number } } | null)?.params?.pages ?? 3);
 
   return (
     <>
@@ -26,13 +28,24 @@ export default async function ReverseAsinDetail({ params }: PageProps<'/reverse-
       {product?.title && <p className="mb-3 text-sm text-slate-600">{product.title}</p>}
       {job && <JobWatcher jobId={job.id} initialStatus={job.status} />}
       <p className="my-3 text-sm text-slate-500">
-        {checked.size}/{candidates.length} keyword verificate · trovato in {found.length}
+        {checked.size}/{candidates.length} keyword verificate · trovato in {new Set(found.map((r) => r.keyword)).size}
+        {multi && ` · ${new Set((results ?? []).map((r) => r.asin)).size} libri osservati`}
+        {run.deep_view_id && (
+          <>
+            {' '}
+            ·{' '}
+            <a href={`/deep-view/${run.deep_view_id}/keyword`} className="underline">
+              aggregato per keyword
+            </a>
+          </>
+        )}
       </p>
       <div className="overflow-auto rounded-lg border border-slate-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
               <th className="px-3 py-2 text-left">Keyword</th>
+              {multi && <th className="px-3 py-2 text-left">ASIN</th>}
               <th className="px-3 py-2 text-left">Esito</th>
               <th className="px-3 py-2 text-right">Pagina</th>
               <th className="px-3 py-2 text-right">Posizione</th>
@@ -48,7 +61,8 @@ export default async function ReverseAsinDetail({ params }: PageProps<'/reverse-
                     {r.keyword}
                   </a>
                 </td>
-                <td className="px-3 py-1.5">{r.found ? <Badge tone="good">trovato</Badge> : <Badge>non in top {3 * 48}</Badge>}</td>
+                {multi && <td className="px-3 py-1.5 font-mono text-xs">{r.asin ?? run.asin}</td>}
+                <td className="px-3 py-1.5">{r.found ? <Badge tone="good">trovato</Badge> : <Badge>non in top {pages * 48}</Badge>}</td>
                 <td className="px-3 py-1.5 text-right">{r.page ?? '—'}</td>
                 <td className="px-3 py-1.5 text-right">{r.position ?? '—'}</td>
                 <td className="px-3 py-1.5 text-right">{r.organic_position ?? (r.found ? 'sponsor.' : '—')}</td>
@@ -60,7 +74,7 @@ export default async function ReverseAsinDetail({ params }: PageProps<'/reverse-
               .map((c) => (
                 <tr key={c} className="text-slate-400">
                   <td className="px-3 py-1.5">{c}</td>
-                  <td className="px-3 py-1.5" colSpan={5}>
+                  <td className="px-3 py-1.5" colSpan={multi ? 6 : 5}>
                     in attesa…
                   </td>
                 </tr>

@@ -97,6 +97,7 @@ export async function applyProgress(userId: string, job: JobRow, payload: Progre
           run_id: runId,
           user_id: userId,
           keyword: r.keyword,
+          asin: r.asin ?? (job.params as { asin?: string }).asin ?? null,
           found: r.found,
           page: r.page,
           position: r.position,

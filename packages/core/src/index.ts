@@ -28,6 +28,7 @@ export * from './keywords/normalize';
 export * from './keywords/expansion';
 export * from './keywords/autocomplete';
 export * from './keywords/ngrams';
+export * from './keywords/pool';
 
 export * from './jobs/protocol';
 export * from './jobs/planners';

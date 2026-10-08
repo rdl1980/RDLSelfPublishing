@@ -65,6 +65,10 @@ export default defineContentScript({
         },
       });
       ui.mount();
+      // Lo slot dei risultati è una griglia: il pannello deve occupare tutta la riga, non una cella.
+      ui.shadowHost.style.gridColumn = '1 / -1';
+      ui.shadowHost.style.width = '100%';
+      ui.shadowHost.style.display = 'block';
     };
 
     await render();

@@ -51,7 +51,7 @@ export function ReverseAsinForm({ initialAsin = '', initialTitle = '' }: { initi
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ type: 'reverse_asin', params: { asin, candidates: list, alias: 'stripbooks', pages: 3 } }),
     });
-    const j = (await r.json()) as { runId?: string; error?: string };
+    const j = (await r.json().catch(() => ({ error: `Errore del server (HTTP ${r.status})` }))) as { runId?: string; error?: string };
     setBusy(null);
     if (!r.ok || !j.runId) return setError(j.error ?? 'Errore');
     router.push(`/reverse-asin/${j.runId}`);

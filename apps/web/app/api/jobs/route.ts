@@ -2,7 +2,7 @@ import { JOB_TYPES, type JobType } from '@rdl/core';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createJob } from '@/lib/db/jobs';
-import { adminClient } from '@/lib/supabase/admin';
+import { ADMIN_MISSING_MESSAGE, adminClient, adminConfigured } from '@/lib/supabase/admin';
 import { getUser } from '@/lib/supabase/server';
 
 const Body = z.object({ type: z.enum(JOB_TYPES), params: z.record(z.string(), z.unknown()), priority: z.number().int().optional() });
@@ -11,6 +11,7 @@ const Body = z.object({ type: z.enum(JOB_TYPES), params: z.record(z.string(), z.
 export async function POST(req: Request) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
+  if (!adminConfigured()) return NextResponse.json({ error: ADMIN_MISSING_MESSAGE }, { status: 503 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Payload non valido' }, { status: 400 });
   const { type, params, priority } = parsed.data;
@@ -49,6 +50,7 @@ export async function POST(req: Request) {
 export async function GET() {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
+  if (!adminConfigured()) return NextResponse.json({ error: ADMIN_MISSING_MESSAGE }, { status: 503 });
   const { data } = await adminClient().from('jobs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50);
   return NextResponse.json({ jobs: data ?? [] });
 }

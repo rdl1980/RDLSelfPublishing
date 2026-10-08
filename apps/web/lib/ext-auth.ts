@@ -2,7 +2,7 @@ import 'server-only';
 
 import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { adminClient } from './supabase/admin';
+import { ADMIN_MISSING_MESSAGE, adminClient } from './supabase/admin';
 
 export interface ExtUser {
   userId: string;
@@ -41,10 +41,7 @@ export async function authenticateExtension(req: Request): Promise<ExtUser | nul
 
 export function unauthorized() {
   if (!process.env.SUPABASE_SECRET_KEY) {
-    return NextResponse.json(
-      { error: 'Server non configurato: manca SUPABASE_SECRET_KEY in apps/web/.env.local (vedi README)' },
-      { status: 503 },
-    );
+    return NextResponse.json({ error: ADMIN_MISSING_MESSAGE }, { status: 503 });
   }
   return NextResponse.json({ error: 'Token non valido o mancante' }, { status: 401 });
 }

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { adminClient } from '@/lib/supabase/admin';
+import { ADMIN_MISSING_MESSAGE, adminClient, adminConfigured } from '@/lib/supabase/admin';
 import { getUser } from '@/lib/supabase/server';
 
 export async function GET(_req: Request, ctx: RouteContext<'/api/jobs/[id]'>) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
+  if (!adminConfigured()) return NextResponse.json({ error: ADMIN_MISSING_MESSAGE }, { status: 503 });
   const { id } = await ctx.params;
   const { data } = await adminClient().from('jobs').select('id, type, status, progress, error, attempts, created_at, finished_at, heartbeat_at').eq('id', id).eq('user_id', user.id).maybeSingle();
   if (!data) return NextResponse.json({ error: 'Non trovato' }, { status: 404 });
@@ -17,6 +18,7 @@ const Action = z.object({ action: z.enum(['cancel', 'retry']) });
 export async function POST(req: Request, ctx: RouteContext<'/api/jobs/[id]'>) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
+  if (!adminConfigured()) return NextResponse.json({ error: ADMIN_MISSING_MESSAGE }, { status: 503 });
   const { id } = await ctx.params;
   const parsed = Action.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Azione non valida' }, { status: 400 });

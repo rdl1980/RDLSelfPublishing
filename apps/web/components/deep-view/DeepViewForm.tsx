@@ -22,7 +22,7 @@ export function DeepViewForm({ initialKeyword = '' }: { initialKeyword?: string 
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ type: 'deep_view', params: { keyword: keyword.trim(), alias, pages, enrich, maxAsins: pages * 50 } }),
     });
-    const j = (await r.json()) as { deepViewId?: string; error?: string };
+    const j = (await r.json().catch(() => ({ error: `Errore del server (HTTP ${r.status})` }))) as { deepViewId?: string; error?: string };
     setBusy(false);
     if (!r.ok || !j.deepViewId) return setError(j.error ?? 'Errore');
     router.push(`/deep-view/${j.deepViewId}`);

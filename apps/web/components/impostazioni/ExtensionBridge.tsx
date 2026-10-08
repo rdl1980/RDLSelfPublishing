@@ -12,7 +12,11 @@ export function ExtensionBridge({ token }: { token: string | null }) {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    const check = () => setVersion(document.documentElement.dataset.rdlExtension ?? null);
+    // L'attributo può sparire dopo l'idratazione di React: non azzerare mai una versione già rilevata (anche via pong).
+    const check = () => {
+      const v = document.documentElement.dataset.rdlExtension;
+      if (v) setVersion(v);
+    };
     check();
     const onMsg = (ev: MessageEvent) => {
       const d = ev.data as { source?: string; type?: string; version?: string; status?: Status } | undefined;
@@ -24,8 +28,12 @@ export function ExtensionBridge({ token }: { token: string | null }) {
       }
     };
     window.addEventListener('message', onMsg);
-    window.postMessage({ source: 'rdl-web', type: 'ping' }, '*');
-    const id = setInterval(check, 2000);
+    const ping = () => window.postMessage({ source: 'rdl-web', type: 'ping' }, '*');
+    ping();
+    const id = setInterval(() => {
+      check();
+      ping();
+    }, 2000);
     return () => {
       window.removeEventListener('message', onMsg);
       clearInterval(id);

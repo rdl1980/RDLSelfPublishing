@@ -4,6 +4,14 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 import { supabaseSecretKey, supabaseUrl } from './env';
 
+/** True se la chiave segreta è configurata (necessaria per job, ingest e API estensione). */
+export function adminConfigured(): boolean {
+  return Boolean(process.env.SUPABASE_SECRET_KEY);
+}
+
+export const ADMIN_MISSING_MESSAGE =
+  'Server non configurato: manca SUPABASE_SECRET_KEY (in locale apps/web/.env.local, su Vercel in Settings → Environment Variables, poi redeploy)';
+
 let cached: ReturnType<typeof createClient<Database>> | null = null;
 
 /**

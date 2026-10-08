@@ -21,7 +21,13 @@ export default defineContentScript({
   runAt: 'document_start',
 
   main() {
-    document.documentElement.dataset.rdlExtension = chrome.runtime.getManifest().version;
+    const mark = () => {
+      document.documentElement.dataset.rdlExtension = chrome.runtime.getManifest().version;
+    };
+    mark();
+    // React può riscrivere gli attributi di <html> durante l'idratazione: rimetti il marcatore dopo il caricamento.
+    window.addEventListener('DOMContentLoaded', mark);
+    window.addEventListener('load', () => setTimeout(mark, 500));
 
     window.addEventListener('message', async (ev) => {
       if (ev.source !== window) return;

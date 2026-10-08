@@ -22,6 +22,7 @@ export * from './config/expansion.it';
 export * from './models/bsr-sales';
 export * from './models/royalty';
 export * from './models/niche-score';
+export * from './models/calibration';
 
 export * from './keywords/normalize';
 export * from './keywords/expansion';

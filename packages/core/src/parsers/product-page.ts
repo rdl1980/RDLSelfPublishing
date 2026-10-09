@@ -104,7 +104,7 @@ function parseBsrEntry(entry: DetailEntry | undefined): BsrInfo {
   // "n. 123 in Store (<a>Visualizza i Top 100 nella categoria Store</a>)": il link dello store non ha id numerico.
   // Caso eBook gratuito: "#150 gratuiti nel negozio Kindle Store" / "#150 Free in Kindle Store" → non è un BSR a pagamento.
   const RANK_RE = /(?:n\.\s*|#)?([\d][\d.,]*)\s+in\s+([^(\n]+)/i;
-  const MAIN_RE = /(?:n\.\s*|#)\s*([\d][\d.,]*)\s*(gratuit\w*|free)?\s*(?:in|nel negozio|nello store)?\s*([^(\n]*)/i;
+  const MAIN_RE = /(?:n\.\s*|#)?\s*([\d][\d.,]*)\s*(gratuit\w*|free)?\s*(?:in|nel negozio|nello store)?\s*([^(\n]*)/i;
   let main: number | null = null;
   let store: BsrInfo['store'] = null;
   const ranks: CategoryRank[] = [];

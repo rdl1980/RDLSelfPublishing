@@ -51,8 +51,9 @@ export default defineContentScript({
       const ui = await createShadowRootUi(ctx, {
         name: 'rdl-quick-view',
         position: 'inline',
+        // Fuori dalla griglia dei risultati (che ridurrebbe il pannello a una cella): subito prima della lista.
         anchor: () => document.querySelector('div.s-main-slot') ?? document.querySelector('#search') ?? document.body,
-        append: 'first',
+        append: document.querySelector('div.s-main-slot') ? 'before' : 'first',
         css: ':host { font-size: 16px; }',
         onMount(container) {
           root = ReactDOM.createRoot(container);
@@ -65,10 +66,9 @@ export default defineContentScript({
         },
       });
       ui.mount();
-      // Lo slot dei risultati è una griglia: il pannello deve occupare tutta la riga, non una cella.
-      ui.shadowHost.style.gridColumn = '1 / -1';
-      ui.shadowHost.style.width = '100%';
       ui.shadowHost.style.display = 'block';
+      ui.shadowHost.style.width = '100%';
+      ui.shadowHost.style.margin = '8px 0';
     };
 
     await render();

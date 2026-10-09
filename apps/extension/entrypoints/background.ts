@@ -195,6 +195,8 @@ export default defineBackground(() => {
   });
 
   chrome.runtime.onInstalled.addListener(() => {
+    // Nuova build (o ricarica): svuota la cache prodotti, i parser potrebbero essere cambiati.
+    void gcCache(0);
     void chrome.alarms.create('cache:gc', { periodInMinutes: 360 });
     void chrome.alarms.create('sync:retry', { periodInMinutes: 5 });
     void chrome.alarms.create('jobs:tick', { periodInMinutes: 1 });

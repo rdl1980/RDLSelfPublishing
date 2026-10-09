@@ -17,6 +17,20 @@ describe('parseProductPage: layout a tabella (cancelleria, Moleskine)', () => {
   });
 });
 
+describe('parseProductPage: eBook gratuito ("#150 gratuiti nel negozio Kindle Store")', () => {
+  it('non scambia la classifica dei gratuiti né una categoria per il BSR', () => {
+    const { product, snapshot } = parseProductPage(loadFixture('product-it-kindle-free-B0GKBS4W4Q.html'));
+    expect(product.asin).toBe('B0GKBS4W4Q');
+    expect(snapshot.bsr).toBeNull();
+    expect(snapshot.bsrStore).toBe('kindle');
+    expect(snapshot.categoryRanks).toEqual([
+      { id: null, name: 'Gratuiti (Kindle Store)', rank: 150 },
+      { id: expect.any(String), name: 'eBook di donne detective dilettanti', rank: 21 },
+      { id: expect.any(String), name: 'Letteratura e narrativa (Kindle Store)', rank: 116 },
+    ]);
+  });
+});
+
 describe('parseProductPage: libro senza rank di store (solo categorie)', () => {
   it('Demetra: main null, due categorie con id', () => {
     const { product, snapshot } = parseProductPage(loadFixture('product-it-8844072904.html'));

@@ -102,7 +102,9 @@ function parseBsrEntry(entry: DetailEntry | undefined): BsrInfo {
 
   // Ogni rank è "n. 123 in <a>Categoria</a>" oppure, per lo store principale,
   // "n. 123 in Store (<a>Visualizza i Top 100 nella categoria Store</a>)": il link dello store non ha id numerico.
+  // Caso eBook gratuito: "#150 gratuiti nel negozio Kindle Store" / "#150 Free in Kindle Store" → non è un BSR a pagamento.
   const RANK_RE = /(?:n\.\s*|#)?([\d][\d.,]*)\s+in\s+([^(\n]+)/i;
+  const MAIN_RE = /(?:n\.\s*|#)\s*([\d][\d.,]*)\s*(gratuit\w*|free)?\s*(?:in|nel negozio|nello store)?\s*([^(\n]*)/i;
   let main: number | null = null;
   let store: BsrInfo['store'] = null;
   const ranks: CategoryRank[] = [];
@@ -113,17 +115,29 @@ function parseBsrEntry(entry: DetailEntry | undefined): BsrInfo {
     const anchorText = text(a);
     const isMain = id === null || /top 100/i.test(anchorText);
     const container = a.parentElement ?? entry.element;
+    if (isMain) {
+      // Solo il testo diretto del contenitore, senza le categorie annidate nella <ul>.
+      let seg = text(container);
+      for (const ul of qa(container, 'ul')) seg = seg.replace(text(ul), ' ');
+      const m = seg.match(MAIN_RE);
+      const rank = m ? parseLocaleInt(m[1]) : null;
+      if (rank === null) continue;
+      const isFree = Boolean(m?.[2]);
+      const storeName = (m?.[3] ?? '').trim() || (/kindle/i.test(anchorText) ? 'Kindle Store' : 'Libri');
+      if (isFree) {
+        // Classifica dei gratuiti: non comparabile con il BSR a pagamento → nessuna stima vendite.
+        ranks.push({ id: null, name: `Gratuiti (${storeName.replace(/\s*\(.*$/, '')})`, rank });
+        if (store === null) store = /kindle/i.test(storeName + anchorText) ? 'kindle' : 'books';
+      } else if (main === null) {
+        main = rank;
+        store = /kindle/i.test(storeName + anchorText) ? 'kindle' : 'books';
+      }
+      continue;
+    }
     const m = text(container).match(RANK_RE);
     if (!m) continue;
     const rank = parseLocaleInt(m[1]);
     if (rank === null) continue;
-    if (isMain) {
-      if (main === null) {
-        main = rank;
-        store = /kindle/i.test(m[2] ?? '') ? 'kindle' : 'books';
-      }
-      continue;
-    }
     const name = anchorText || (m[2] ?? '').trim();
     const key = `${name}|${rank}`;
     if (!name || seen.has(key)) continue;
